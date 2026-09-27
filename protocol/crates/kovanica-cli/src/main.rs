@@ -4,7 +4,6 @@
 //! The address encoding and spend signing are delegated to `kovanica-state`,
 //! the node's own crate, so the CLI stays byte-compatible with the ledger.
 
-mod api;
 mod tui;
 
 use std::path::PathBuf;
@@ -13,7 +12,7 @@ use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 use kovanica_state::{derive_rwa_asset_id, Address, AssetId};
 
-use crate::api::{print_json, Client};
+use kovanica_cli::api::{print_json, Client};
 use kovanica_cli::Wallet;
 
 /// 1 KVNC = 10^8 atoms.
@@ -385,7 +384,7 @@ fn main() -> Result<()> {
         Command::Offer(offer_cmd) => offer(&client, offer_cmd)?,
         Command::Rwa(rwa_cmd) => rwa(&client, rwa_cmd)?,
         Command::Nft(nft_cmd) => nft(&client, nft_cmd)?,
-        Command::Tui => crate::tui::run(client, cli.api.clone())?,
+        Command::Tui => crate::tui::run(client)?,
     }
     Ok(())
 }
