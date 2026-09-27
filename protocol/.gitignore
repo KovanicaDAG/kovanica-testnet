@@ -34,3 +34,20 @@ data/*.snap
 build/
 jniLibs/
 .kovi/
+
+# .gitignore for secret key material
+#
+# Two classes of secret live in this tree and must NEVER be committed.
+
+# 1. PoA authority key files (mode 0600), written by the authority-key ceremony.
+protocol/authority-keys/authority-*.env
+protocol/mainnet-authority-keys/authority-*.env
+
+# 2. Runtime data directories. `Node::data_dir()` defaults to a relative `data/`
+#    under the crate, so `cargo test` / `cargo run` drop these into the source
+#    tree. They contain the founder premine key, the operator wallet (which may
+#    be a 12/24-word BIP-39 phrase), validator/miner seeds, faucet ledgers and
+#    peer ban state — all regenerable, none of it belongs in git history.
+#    Set KOVANICA_DATA outside the checkout to keep them out entirely.
+crates/*/data/
+desktop-app/data/

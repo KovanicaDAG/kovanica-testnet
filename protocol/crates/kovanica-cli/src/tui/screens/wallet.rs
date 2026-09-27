@@ -12,7 +12,7 @@ use crate::tui::{
     format_kvnc, short_hex, theme, widgets, widgets::Form, widgets::FormResult, widgets::Modal,
     widgets::ModalResult, ActionList, App, ScreenImpl, StatusMsg,
 };
-use crate::wallet::Wallet;
+use crate::Wallet;
 
 pub struct WalletState {
     pub actions: ActionList,
@@ -272,8 +272,8 @@ impl WalletState {
 }
 
 impl ScreenImpl for WalletState {
-    fn handle_key(&mut self, app: &mut App, key: ratatui::crossterm::event::KeyEvent) {
-        use ratatui::crossterm::event::KeyCode;
+    fn handle_key(&mut self, app: &mut App, key: crossterm::event::KeyEvent) {
+        use crossterm::event::KeyCode;
         if let Some(modal) = &mut self.modal {
             let result = modal.handle_key(key);
             self.handle_modal(app, result);

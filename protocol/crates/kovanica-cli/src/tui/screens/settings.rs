@@ -104,8 +104,8 @@ impl SettingsState {
 }
 
 impl ScreenImpl for SettingsState {
-    fn handle_key(&mut self, app: &mut App, key: ratatui::crossterm::event::KeyEvent) {
-        use ratatui::crossterm::event::KeyCode;
+    fn handle_key(&mut self, app: &mut App, key: crossterm::event::KeyEvent) {
+        use crossterm::event::KeyCode;
         if let Some(form) = &mut self.form {
             let result = form.handle_key(key);
             self.handle_form(app, result);

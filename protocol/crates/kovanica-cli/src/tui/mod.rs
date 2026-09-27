@@ -36,7 +36,7 @@ use ratatui::{
 use serde_json::Value;
 
 use crate::api::Client;
-use crate::wallet::Wallet;
+use crate::Wallet;
 
 use self::screens::{DashboardState, Screen};
 use self::widgets::{spinner, Modal, ModalResult};

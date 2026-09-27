@@ -203,7 +203,43 @@ crates/
       challenger_consensus_sync.rs         Empirical consensus-invariant suite (10 tests: difficulty retarget clamps, SPV difficulty bounds, wall-clock drift, reorg locator sync, deep-reorg/fork convergence) — the difficulty-retarget cases are [TARGET]-obsolete, the rest survive
       htlc_node.rs             Integration: RFC-004 swap e2e (create/verify/redeem/extract/refund), timeout-ordering enforcement, htlc_* RPC commands
       vault_node.rs            Integration: RFC-005 vault node surface — create/release/balance, absolute + relative + combined gates, owner-signature requirement, vault_* RPC commands
+  kovanica-wallet/             Keys: BIP-39 + SLIP-0010 ed25519 derivation, wallet file I/O (client-only; no consensus surface)
+    src/
+      lib.rs                   Crate docs + re-exports
+      slip10.rs                SLIP-0010 ed25519 master/child derivation. `derive_path(&[u8], &[u32])` is the generic hardened path; `derive_ed25519` delegates to it at the FROZEN Kovanica path
+      wallet.rs                `Wallet`: generate/restore/load/save, `from_seed` (raw 32-byte) vs `from_mnemonic*` (BIP-39 passphrase support), `load_with_passphrase`, `public_key`
+    tests/
+      slip10_vectors.rs        Known-answer tests: official SLIP-0010 ed25519 vector 1, the frozen-path index 0/1/2 vectors, render/parse round-trip, generate/restore round-trip
+  kovanica-cli/                `kovanica` binary: explorer queries, local wallet, signed transfers, terminal UI (client-only)
+    src/
+      lib.rs                   Re-exports `Wallet` from kovanica-wallet so `kovanica_cli::Wallet` keeps working
+      main.rs                  clap surface + command dispatch
+      api.rs                   Thin HTTP client for the explorer JSON API
+      tui/                     Terminal UI — `mod.rs` (App/event loop/Screen trait), `theme.rs`, `widgets.rs`, `screens/` (dashboard, explorer, wallet, send, assets, contracts, stealth, nft_rwa, settings)
+  kovanica-ffi/                UniFFI bindings for the mobile light node (Slice 3)
 ```
+
+⚠️ **Key derivation is frozen and has exactly one implementation.** `Wallet`
+lives in `kovanica-wallet`, which both `kovanica-node` (genesis keys) and
+`kovanica-cli` depend on. The path is `m/44'/3007'/0'/0'/i'`, with **every**
+segment hardened (`| 0x80000000`); the official SLIP-0010 index convention (only
+the leading `m` unhardened) is deliberately **not** used, because changing it
+would move every derived address. `tests/slip10_vectors.rs` pins the vectors, so
+the two can never silently diverge again. The standalone `cli/` tree (now
+deleted) used a truncating derivation instead, which is why the divergence is
+gone. Never add a second BIP-39/SLIP-0010 implementation. Genesis itself never
+derives from a mnemonic (founder uses `from_seed(founder_seed)`, treasury uses
+`KeyPair::from_u64`), so derivation changes cannot move a balance.
+
+⚠️ **`crossterm` must track the version ratatui 0.29 re-exports** (`0.28.1`).
+Declaring a different minor pulls a second `crossterm` into the tree, which
+makes `crossterm::event::KeyEvent` and `ratatui::crossterm::event::KeyEvent`
+distinct types and silently breaks `Screen::handle_key`'s trait/impl match.
+
+⚠️ **`crates/*/data/` and `desktop-app/data/` are gitignored and hold secrets.**
+`Node::data_dir()` defaults to a relative `data/`, so test runs drop the founder
+premine key, the operator wallet (possibly a BIP-39 phrase) and validator seeds
+into the source tree. Point `KOVANICA_DATA` outside the checkout.
 
 android-light-node/            Jetpack Compose light-node wallet app (slices 9a–9e)
   app/src/main/java/com/kovanica/lightnode/

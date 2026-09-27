@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/kovanica-dag", "crates/kovanica-state", "crates/kovanica-node", "crates/kovanica-cli", "crates/kovanica-ffi"]
+members = ["crates/kovanica-dag", "crates/kovanica-state", "crates/kovanica-wallet", "crates/kovanica-node", "crates/kovanica-cli", "crates/kovanica-ffi"]
 
 [workspace.package]
 version = "0.3.0"
@@ -17,6 +17,8 @@ ed25519-dalek = { version = "2", features = ["std"] }
 curve25519-dalek = "4"
 sha2 = "0.10"
 sha1 = "0.10"
+# SLIP-0010 key derivation (hmac + sha512); used by kovanica-wallet only.
+hmac = "0.12"
 base64 = "0.22"
 rand_core = { version = "0.6", features = ["std"] }
 rand = "0.8"
@@ -52,5 +54,6 @@ arbitrary = "1.3"
 criterion = "0.5"
 libfuzzer-sys = "0.4"
 
-# BIP39 mnemonic support (A13 operator/founder wallet)
+# BIP-39 mnemonic parsing/entropy. Used by kovanica-wallet only — it is the sole
+# owner of key derivation, so no other crate should take this dependency.
 bip39 = { version = "2", features = ["rand", "std"] }

@@ -74,8 +74,8 @@ impl DashboardState {
 }
 
 impl ScreenImpl for DashboardState {
-    fn handle_key(&mut self, app: &mut App, key: ratatui::crossterm::event::KeyEvent) {
-        use ratatui::crossterm::event::{KeyCode, KeyModifiers};
+    fn handle_key(&mut self, app: &mut App, key: crossterm::event::KeyEvent) {
+        use crossterm::event::{KeyCode, KeyModifiers};
         match key.code {
             KeyCode::Up | KeyCode::Char('k') => self.actions.previous(),
             KeyCode::Down | KeyCode::Char('j') => self.actions.next(),

@@ -1,0 +1,25 @@
+[package]
+name = "kovanica-wallet"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Client-side Kovanica (KVNC) wallet: frozen SLIP-0010 ed25519 key derivation and local key storage"
+
+[dependencies]
+anyhow.workspace = true
+bip39 = { workspace = true, features = ["rand", "std"] }
+getrandom.workspace = true
+hex.workspace = true
+hmac.workspace = true
+sha2.workspace = true
+kovanica-state = { path = "../kovanica-state" }
+
+[dev-dependencies]
+# Integration tests assert on the rendered address form, which lives in the
+# ledger crate. Regular dependencies are not visible to `tests/`.
+kovanica-state = { path = "../kovanica-state" }
+
+[lints.rust]
+unsafe_code = "forbid"

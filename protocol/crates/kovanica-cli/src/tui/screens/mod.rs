@@ -67,7 +67,7 @@ impl Screen {
 }
 
 impl ScreenImpl for Screen {
-    fn handle_key(&mut self, app: &mut crate::tui::App, key: ratatui::crossterm::event::KeyEvent) {
+    fn handle_key(&mut self, app: &mut crate::tui::App, key: crossterm::event::KeyEvent) {
         match self {
             Screen::Dashboard(s) => s.handle_key(app, key),
             Screen::Wallet(s) => s.handle_key(app, key),

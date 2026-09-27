@@ -96,8 +96,8 @@ impl Form {
     }
 
     /// Handle a key press. Returns `FormResult::Submit` when the user confirms.
-    pub fn handle_key(&mut self, key: ratatui::crossterm::event::KeyEvent) -> FormResult {
-        use ratatui::crossterm::event::{KeyCode, KeyModifiers};
+    pub fn handle_key(&mut self, key: crossterm::event::KeyEvent) -> FormResult {
+        use crossterm::event::{KeyCode, KeyModifiers};
         if self.fields.is_empty() {
             return FormResult::Continue;
         }
@@ -272,8 +272,8 @@ impl Modal {
         self
     }
 
-    pub fn handle_key(&mut self, key: ratatui::crossterm::event::KeyEvent) -> ModalResult {
-        use ratatui::crossterm::event::{KeyCode, KeyModifiers};
+    pub fn handle_key(&mut self, key: crossterm::event::KeyEvent) -> ModalResult {
+        use crossterm::event::{KeyCode, KeyModifiers};
         match key.code {
             KeyCode::Tab | KeyCode::Left | KeyCode::Right => {
                 self.selected = !self.selected;

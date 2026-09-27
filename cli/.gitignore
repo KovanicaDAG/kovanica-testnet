@@ -1,5 +1,0 @@
-/target
-# Wallet key files hold a secret seed — never commit them.
-*.key
-# Local node data directory, if the explorer is run alongside.
-/data

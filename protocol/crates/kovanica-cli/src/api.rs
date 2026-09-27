@@ -16,8 +16,14 @@ use anyhow::{anyhow, Result};
 use serde_json::Value;
 
 /// A client bound to one explorer base URL (no trailing slash).
+#[derive(Clone)]
 pub struct Client {
     base: String,
+}
+
+/// Parse a Kovanica address (`kvnc…dag` or 64-hex).
+pub fn parse_address(s: &str) -> Result<kovanica_state::Address> {
+    kovanica_state::Address::parse(s).map_err(|e| anyhow!("invalid address {s:?}: {e}"))
 }
 
 impl Client {
@@ -215,6 +221,95 @@ impl Client {
     /// Get collection detail by collection ID.
     pub fn collection_detail(&self, collection_id: &str) -> Result<Value> {
         self.get(&format!("/api/collection/{collection_id}"))
+    }
+
+    /// Get RWA detail by asset ID.
+    pub fn rwa_detail(&self, asset_id: &str) -> Result<Value> {
+        self.get(&format!("/api/rwa/{asset_id}"))
+    }
+
+    /// Derive an RWA asset id from issuer key + parameters.
+    pub fn rwa_derive(&self, issuer: &str, class: &str, id: &str, version: u8) -> Result<Value> {
+        self.post_form(&format!(
+            "/api/rwa/derive?issuer={issuer}&class={class}&id={id}&version={version}"
+        ))
+    }
+
+    /// Transaction history for an address.
+    pub fn history(&self, address: &str, limit: u32) -> Result<Value> {
+        self.get(&format!("/api/history?address={address}&limit={limit}"))
+    }
+
+    /// Mempool fee estimate for a transfer amount.
+    pub fn fee_estimate(&self, amount: u64) -> Result<Value> {
+        self.get(&format!("/api/fee_estimate?amount={amount}"))
+    }
+
+    /// Block detail by id.
+    pub fn block_detail(&self, id: &str) -> Result<Value> {
+        self.get(&format!("/api/block/{id}"))
+    }
+
+    /// Transaction detail by id.
+    pub fn tx_detail(&self, id: &str) -> Result<Value> {
+        self.get(&format!("/api/tx/{id}"))
+    }
+
+    /// Address detail (balance + history summary).
+    pub fn address_detail(&self, addr: &str) -> Result<Value> {
+        self.get(&format!("/api/address/{addr}"))
+    }
+
+    /// Broadcast a fully-encoded, already-signed transaction blob.
+    pub fn submit_tx(&self, tx_hex: &str) -> Result<Value> {
+        let body = serde_json::json!({ "tx_hex": tx_hex });
+        self.post_json("/api/submit_tx", &body)
+    }
+
+    /// Testnet faucet: request KVNC from the operator wallet.
+    pub fn faucet(&self, to: &str, amount: u64) -> Result<Value> {
+        self.post_form(&format!("/api/faucet?to={to}&amount={amount}"))
+    }
+
+    /// Create a multisig (M-of-N P2SH) address from public keys.
+    pub fn multisig_create(&self, threshold: u8, pubkeys_hex: &[String]) -> Result<Value> {
+        let body = serde_json::json!({
+            "threshold": threshold,
+            "pubkeys_hex": pubkeys_hex,
+        });
+        self.post_json("/api/multisig/create", &body)
+    }
+
+    /// Build an unsigned multisig spend; returns `tx_blob_hex` + `sighash_hex`.
+    pub fn multisig_build(&self, address: &str, outputs: &[(String, u64)]) -> Result<Value> {
+        let outputs: Vec<serde_json::Value> = outputs
+            .iter()
+            .map(|(addr, amount)| serde_json::json!({ "address": addr, "amount_atoms": amount }))
+            .collect();
+        let body = serde_json::json!({
+            "address": address,
+            "outputs": outputs,
+        });
+        self.post_json("/api/multisig/build", &body)
+    }
+
+    /// Combine partial signatures into a signed multisig transaction.
+    pub fn multisig_combine(
+        &self,
+        tx_blob_hex: &str,
+        partial_sigs_hex: &[String],
+    ) -> Result<Value> {
+        let body = serde_json::json!({
+            "tx_blob_hex": tx_blob_hex,
+            "partial_sigs_hex": partial_sigs_hex,
+        });
+        self.post_json("/api/multisig/combine", &body)
+    }
+
+    /// Submit a fully-signed multisig transaction.
+    pub fn multisig_submit(&self, signed_tx_blob_hex: &str) -> Result<Value> {
+        let body = serde_json::json!({ "signed_tx_blob_hex": signed_tx_blob_hex });
+        self.post_json("/api/multisig/submit", &body)
     }
 }
 

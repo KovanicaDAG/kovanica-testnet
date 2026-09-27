@@ -219,8 +219,8 @@ impl SendState {
 }
 
 impl ScreenImpl for SendState {
-    fn handle_key(&mut self, app: &mut App, key: ratatui::crossterm::event::KeyEvent) {
-        use ratatui::crossterm::event::KeyCode;
+    fn handle_key(&mut self, app: &mut App, key: crossterm::event::KeyEvent) {
+        use crossterm::event::KeyCode;
         if let Some(modal) = &mut self.modal {
             let result = modal.handle_key(key);
             self.handle_modal(app, result);

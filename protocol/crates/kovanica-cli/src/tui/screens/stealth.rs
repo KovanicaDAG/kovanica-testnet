@@ -55,7 +55,7 @@ impl StealthState {
     }
 
     /// Derive scan/spend keypairs from the wallet seed (BLAKE3 domain-separated).
-    fn derive_stealth(wallet: &crate::wallet::Wallet) -> StealthAddress {
+    fn derive_stealth(wallet: &crate::Wallet) -> StealthAddress {
         let seed = wallet.seed();
         let scan_seed: [u8; 32] =
             *blake3::hash(&[seed.as_slice(), b"kovanica-scan"].concat()).as_bytes();
@@ -224,8 +224,8 @@ impl StealthState {
 }
 
 impl ScreenImpl for StealthState {
-    fn handle_key(&mut self, app: &mut App, key: ratatui::crossterm::event::KeyEvent) {
-        use ratatui::crossterm::event::KeyCode;
+    fn handle_key(&mut self, app: &mut App, key: crossterm::event::KeyEvent) {
+        use crossterm::event::KeyCode;
         if let Some(form) = &mut self.form {
             let result = form.handle_key(key);
             self.handle_form(app, result);
