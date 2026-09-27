@@ -15,7 +15,8 @@ use std::time::Duration;
 
 use kovanica_dag::{AuthoritySet, BlockId};
 use kovanica_state::{
-    decode_block_payload, Address, AssetId, OutPoint, Transaction, TxId, TxOutput, MAX_SUPPLY,
+    decode_block_payload, Address, AssetId, HtlcScript, OutPoint, Transaction, TxId, TxOutput,
+    MAX_SUPPLY,
 };
 
 use crate::dht::{NodeId, PeerContact, RoutingTable};
@@ -3234,6 +3235,152 @@ fn dispatch(
             app.mesh.drain(8);
             return Ok(format!("{{\"ok\":true,\"tx\":{}}}", jstr(&id.to_string())));
         }
+        "htlc/prepare" => {
+            let from = parse_addr(q.get("from").ok_or("from address required")?)?;
+            let amount = parse_u64(q, "amount", 0)?;
+            let asset_id = crate::node::asset_id_from_wire(q.get("asset_id").map(String::as_str))?;
+            let recipient_pk = parse_pubkey(q.get("recipient_pk").ok_or("recipient_pk required")?)?;
+            let preimage_hash =
+                parse_hash(q.get("preimage_hash").ok_or("preimage_hash required")?)?;
+            let timeout = parse_u64(q, "timeout", 0)? as u32;
+            let n = app.mesh.node(&node).ok_or("unknown node")?;
+            let p = n
+                .prepare_create_htlc(from, amount, asset_id, recipient_pk, preimage_hash, timeout)
+                .map_err(|e| e.to_string())?;
+            let script_hex = hex::encode(p.script.bytes());
+            let asset_wire = crate::node::asset_id_to_wire(asset_id);
+            return Ok(format!(
+                "{{\"ok\":true,\"sighash\":{},\"htlc_script\":{},\"htlc_address\":{},\"value\":{},\"fee\":{},\"change\":{},\"asset_id\":{},\"outpoint\":{{\"tx\":{},\"index\":{}}}}}",
+                jstr(&hex::encode(p.sighash)),
+                jstr(&script_hex),
+                jstr(&p.address.to_kvnc()),
+                p.value,
+                p.fee,
+                p.value.saturating_sub(amount.saturating_add(p.fee)),
+                jstr(&asset_wire),
+                jstr(&p.outpoint.tx.to_string()),
+                p.outpoint.index
+            ));
+        }
+        "htlc/submit" => {
+            let from = parse_addr(q.get("from").ok_or("from address required")?)?;
+            let amount = parse_u64(q, "amount", 0)?;
+            let asset_id = crate::node::asset_id_from_wire(q.get("asset_id").map(String::as_str))?;
+            let recipient_pk = parse_pubkey(q.get("recipient_pk").ok_or("recipient_pk required")?)?;
+            let preimage_hash =
+                parse_hash(q.get("preimage_hash").ok_or("preimage_hash required")?)?;
+            let timeout = parse_u64(q, "timeout", 0)? as u32;
+            let sig = parse_sig(q.get("sig").ok_or("sig required")?)?;
+            let n = app.mesh.node_mut(&node).ok_or("unknown node")?;
+            let p = n
+                .prepare_create_htlc(from, amount, asset_id, recipient_pk, preimage_hash, timeout)
+                .map_err(|e| e.to_string())?;
+            let id = n.submit_create_htlc(p, sig).map_err(|e| e.to_string())?;
+            app.mesh.drain(8);
+            return Ok(format!("{{\"ok\":true,\"tx\":{}}}", jstr(&id.to_string())));
+        }
+        "htlc/redeem/prepare" => {
+            let from = parse_addr(q.get("from").ok_or("from address required")?)?;
+            let outpoint_tx = parse_hash(q.get("outpoint_tx").ok_or("outpoint_tx required")?)?;
+            let outpoint_index = parse_u64(q, "outpoint_index", 0)? as u32;
+            let outpoint = OutPoint::new(
+                kovanica_state::TxId::from_bytes(outpoint_tx),
+                outpoint_index,
+            );
+            let script_bytes = parse_hex(q.get("script").ok_or("script required")?)?;
+            if script_bytes.len() != 100 {
+                return Err("script must be 100 bytes".into());
+            }
+            let script = HtlcScript::parse(&script_bytes).map_err(|e| e.as_str().to_string())?;
+            let preimage = parse_hex(q.get("preimage").ok_or("preimage required")?)?;
+            let to = parse_addr(q.get("to").ok_or("to address required")?)?;
+            let n = app.mesh.node(&node).ok_or("unknown node")?;
+            let p = n
+                .prepare_redeem_htlc(from, outpoint, &script, &preimage, to)
+                .map_err(|e| e.to_string())?;
+            return Ok(format!(
+                "{{\"ok\":true,\"sighash\":{},\"value\":{},\"fee\":{},\"outpoint\":{{\"tx\":{},\"index\":{}}}}}",
+                jstr(&hex::encode(p.sighash)),
+                p.value,
+                p.fee,
+                jstr(&p.outpoint.tx.to_string()),
+                p.outpoint.index
+            ));
+        }
+        "htlc/redeem/submit" => {
+            let from = parse_addr(q.get("from").ok_or("from address required")?)?;
+            let outpoint_tx = parse_hash(q.get("outpoint_tx").ok_or("outpoint_tx required")?)?;
+            let outpoint_index = parse_u64(q, "outpoint_index", 0)? as u32;
+            let outpoint = OutPoint::new(
+                kovanica_state::TxId::from_bytes(outpoint_tx),
+                outpoint_index,
+            );
+            let script_bytes = parse_hex(q.get("script").ok_or("script required")?)?;
+            if script_bytes.len() != 100 {
+                return Err("script must be 100 bytes".into());
+            }
+            let script = HtlcScript::parse(&script_bytes).map_err(|e| e.as_str().to_string())?;
+            let preimage = parse_hex(q.get("preimage").ok_or("preimage required")?)?;
+            let to = parse_addr(q.get("to").ok_or("to address required")?)?;
+            let sig = parse_sig(q.get("sig").ok_or("sig required")?)?;
+            let n = app.mesh.node_mut(&node).ok_or("unknown node")?;
+            let p = n
+                .prepare_redeem_htlc(from, outpoint, &script, &preimage, to)
+                .map_err(|e| e.to_string())?;
+            let id = n.submit_redeem_htlc(p, sig).map_err(|e| e.to_string())?;
+            app.mesh.drain(8);
+            return Ok(format!("{{\"ok\":true,\"tx\":{}}}", jstr(&id.to_string())));
+        }
+        "htlc/refund/prepare" => {
+            let from = parse_addr(q.get("from").ok_or("from address required")?)?;
+            let outpoint_tx = parse_hash(q.get("outpoint_tx").ok_or("outpoint_tx required")?)?;
+            let outpoint_index = parse_u64(q, "outpoint_index", 0)? as u32;
+            let outpoint = OutPoint::new(
+                kovanica_state::TxId::from_bytes(outpoint_tx),
+                outpoint_index,
+            );
+            let script_bytes = parse_hex(q.get("script").ok_or("script required")?)?;
+            if script_bytes.len() != 100 {
+                return Err("script must be 100 bytes".into());
+            }
+            let script = HtlcScript::parse(&script_bytes).map_err(|e| e.as_str().to_string())?;
+            let to = parse_addr(q.get("to").ok_or("to address required")?)?;
+            let n = app.mesh.node(&node).ok_or("unknown node")?;
+            let p = n
+                .prepare_refund_htlc(from, outpoint, &script, to)
+                .map_err(|e| e.to_string())?;
+            return Ok(format!(
+                "{{\"ok\":true,\"sighash\":{},\"value\":{},\"fee\":{},\"outpoint\":{{\"tx\":{},\"index\":{}}}}}",
+                jstr(&hex::encode(p.sighash)),
+                p.value,
+                p.fee,
+                jstr(&p.outpoint.tx.to_string()),
+                p.outpoint.index
+            ));
+        }
+        "htlc/refund/submit" => {
+            let from = parse_addr(q.get("from").ok_or("from address required")?)?;
+            let outpoint_tx = parse_hash(q.get("outpoint_tx").ok_or("outpoint_tx required")?)?;
+            let outpoint_index = parse_u64(q, "outpoint_index", 0)? as u32;
+            let outpoint = OutPoint::new(
+                kovanica_state::TxId::from_bytes(outpoint_tx),
+                outpoint_index,
+            );
+            let script_bytes = parse_hex(q.get("script").ok_or("script required")?)?;
+            if script_bytes.len() != 100 {
+                return Err("script must be 100 bytes".into());
+            }
+            let script = HtlcScript::parse(&script_bytes).map_err(|e| e.as_str().to_string())?;
+            let to = parse_addr(q.get("to").ok_or("to address required")?)?;
+            let sig = parse_sig(q.get("sig").ok_or("sig required")?)?;
+            let n = app.mesh.node_mut(&node).ok_or("unknown node")?;
+            let p = n
+                .prepare_refund_htlc(from, outpoint, &script, to)
+                .map_err(|e| e.to_string())?;
+            let id = n.submit_refund_htlc(p, sig).map_err(|e| e.to_string())?;
+            app.mesh.drain(8);
+            return Ok(format!("{{\"ok\":true,\"tx\":{}}}", jstr(&id.to_string())));
+        }
         "faucet" => {
             if !app.faucet {
                 return Err("faucet disabled".into());
@@ -4165,6 +4312,27 @@ fn parse_sig(s: &str) -> Result<[u8; 64], String> {
     bytes
         .try_into()
         .map_err(|_| "sig must be 64 bytes".to_string())
+}
+
+/// Parse a 32-byte public key from hex (64 chars).
+fn parse_pubkey(s: &str) -> Result<[u8; 32], String> {
+    let bytes = hex::decode(s.trim()).map_err(|_| "pubkey is not hex".to_string())?;
+    bytes
+        .try_into()
+        .map_err(|_| "pubkey must be 32 bytes (64 hex chars)".to_string())
+}
+
+/// Parse a 32-byte hash from hex (64 chars).
+fn parse_hash(s: &str) -> Result<[u8; 32], String> {
+    let bytes = hex::decode(s.trim()).map_err(|_| "hash is not hex".to_string())?;
+    bytes
+        .try_into()
+        .map_err(|_| "hash must be 32 bytes (64 hex chars)".to_string())
+}
+
+/// Parse arbitrary hex to bytes.
+fn parse_hex(s: &str) -> Result<Vec<u8>, String> {
+    hex::decode(s.trim()).map_err(|_| "not valid hex".to_string())
 }
 
 fn parse_u64(

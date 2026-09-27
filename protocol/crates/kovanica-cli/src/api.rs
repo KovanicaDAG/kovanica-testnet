@@ -101,93 +101,12 @@ impl Client {
             "/api/submit?from={from}&to={to}&amount={amount}&sig={sig}"
         ))
     }
-
-    /// Ask the node to build an HTLC and return its signature hash.
-    pub fn prepare_htlc(
-        &self,
-        from: &str,
-        amount: u64,
-        recipient_pk: &[u8; 32],
-        preimage_hash: &[u8; 32],
-        timeout: u32,
-        asset_id: Option<kovanica_state::AssetId>,
-    ) -> Result<Value> {
-        let mut body = serde_json::json!({
-            "from": from,
-            "amount": amount,
-            "recipient_pk": hex::encode(recipient_pk),
-            "preimage_hash": hex::encode(preimage_hash),
-            "timeout": timeout,
-        });
-        if let Some(asset) = asset_id {
-            body["asset_id"] = serde_json::Value::String(hex::encode(asset.as_bytes()));
-        }
-        self.post_json("/api/htlc/prepare", &body)
-    }
-
-    /// Submit a signed HTLC creation transaction.
-    pub fn submit_htlc(&self, from: &str, sighash: &str, sig: &str) -> Result<Value> {
-        let body = serde_json::json!({
-            "from": from,
-            "sighash": sighash,
-            "sig": sig,
-        });
-        self.post_json("/api/htlc/submit", &body)
-    }
-
-    /// Redeem (claim) an HTLC by revealing the preimage.
-    pub fn redeem_htlc(
-        &self,
-        from: &str,
-        outpoint: kovanica_state::OutPoint,
-        script: kovanica_state::htlc::HtlcScript,
-        preimage: [u8; 32],
-        to: &str,
-    ) -> Result<Value> {
-        let body = serde_json::json!({
-            "from": from,
-            "outpoint_tx": outpoint.tx.to_hex(),
-            "outpoint_index": outpoint.index,
-            "script": hex::encode(script.bytes()),
-            "preimage": hex::encode(preimage),
-            "to": to,
-        });
-        self.post_json("/api/htlc/redeem", &body)
-    }
-
-    /// Refund an expired HTLC.
-    pub fn refund_htlc(
-        &self,
-        from: &str,
-        outpoint: kovanica_state::OutPoint,
-        script: kovanica_state::htlc::HtlcScript,
-        to: &str,
-    ) -> Result<Value> {
-        let body = serde_json::json!({
-            "from": from,
-            "outpoint_tx": outpoint.tx.to_hex(),
-            "outpoint_index": outpoint.index,
-            "script": hex::encode(script.bytes()),
-            "to": to,
-        });
-        self.post_json("/api/htlc/refund", &body)
-    }
-
-    /// Query the balance of an HTLC script.
-    pub fn htlc_balance(&self, script: &kovanica_state::htlc::HtlcScript) -> Result<u64> {
-        let script_hex = hex::encode(script.bytes());
-        let val = self.get(&format!("/api/htlc/balance?script={script_hex}"))?;
-        val.get("balance")
-            .and_then(|v| v.as_u64())
-            .ok_or_else(|| anyhow!("no balance in response"))
-    }
-
     /// Ask the node to build an asset transfer and return its signature hash.
     pub fn prepare_transfer_asset(
         &self,
         from: &str,
-        amount: u64,
         to: &str,
+        amount: u64,
         asset_id: Option<kovanica_state::AssetId>,
     ) -> Result<Value> {
         let mut query = format!("/api/prepare?from={from}&to={to}&amount={amount}");
@@ -213,6 +132,172 @@ impl Client {
         self.post_form(&query)
     }
 
+    /// Ask the node to build an HTLC creation and return its signature hash.
+    pub fn prepare_create_htlc(
+        &self,
+        from: &str,
+        amount: u64,
+        recipient_pk: &[u8; 32],
+        preimage_hash: &[u8; 32],
+        timeout: u32,
+        asset_id: Option<kovanica_state::AssetId>,
+    ) -> Result<Value> {
+        let mut query = format!(
+            "/api/htlc/prepare?from={}&amount={}&recipient_pk={}&preimage_hash={}&timeout={}",
+            from,
+            amount,
+            hex::encode(recipient_pk),
+            hex::encode(preimage_hash),
+            timeout
+        );
+        if let Some(asset) = asset_id {
+            query.push_str(&format!("&asset_id={}", hex::encode(asset.as_bytes())));
+        }
+        self.get(&query)
+    }
+
+    /// Submit a signed HTLC creation transaction.
+    #[allow(clippy::too_many_arguments)]
+    pub fn submit_create_htlc(
+        &self,
+        from: &str,
+        amount: u64,
+        recipient_pk: &[u8; 32],
+        preimage_hash: &[u8; 32],
+        timeout: u32,
+        asset_id: Option<kovanica_state::AssetId>,
+        sighash: &str,
+        sig: &str,
+    ) -> Result<Value> {
+        let mut query = format!(
+            "/api/htlc/submit?from={}&amount={}&recipient_pk={}&preimage_hash={}&timeout={}&sighash={}&sig={}",
+            from,
+            amount,
+            hex::encode(recipient_pk),
+            hex::encode(preimage_hash),
+            timeout,
+            sighash,
+            sig
+        );
+        if let Some(asset) = asset_id {
+            query.push_str(&format!("&asset_id={}", hex::encode(asset.as_bytes())));
+        }
+        self.post_form(&query)
+    }
+
+    /// Prepare an unsigned HTLC redeem transaction.
+    pub fn prepare_redeem_htlc(
+        &self,
+        from: &str,
+        outpoint: kovanica_state::OutPoint,
+        script: kovanica_state::htlc::HtlcScript,
+        preimage: [u8; 32],
+        to: &str,
+    ) -> Result<Value> {
+        let query = format!(
+            "/api/htlc/redeem/prepare?from={}&outpoint_tx={}&outpoint_index={}&script={}&preimage={}&to={}",
+            from,
+            outpoint.tx.to_hex(),
+            outpoint.index,
+            hex::encode(script.bytes()),
+            hex::encode(preimage),
+            to
+        );
+        self.get(&query)
+    }
+
+    /// Submit a signed HTLC redeem transaction.
+    #[allow(clippy::too_many_arguments)]
+    pub fn submit_redeem_htlc(
+        &self,
+        from: &str,
+        outpoint: kovanica_state::OutPoint,
+        script: kovanica_state::htlc::HtlcScript,
+        preimage: [u8; 32],
+        to: &str,
+        sighash: &str,
+        sig: &str,
+    ) -> Result<Value> {
+        let query = format!(
+            "/api/htlc/redeem/submit?from={}&outpoint_tx={}&outpoint_index={}&script={}&preimage={}&to={}&sighash={}&sig={}",
+            from,
+            outpoint.tx.to_hex(),
+            outpoint.index,
+            hex::encode(script.bytes()),
+            hex::encode(preimage),
+            to,
+            sighash,
+            sig
+        );
+        self.post_form(&query)
+    }
+
+    /// Prepare an unsigned HTLC refund transaction.
+    pub fn prepare_refund_htlc(
+        &self,
+        from: &str,
+        outpoint: kovanica_state::OutPoint,
+        script: kovanica_state::htlc::HtlcScript,
+        to: &str,
+    ) -> Result<Value> {
+        let query = format!(
+            "/api/htlc/refund/prepare?from={}&outpoint_tx={}&outpoint_index={}&script={}&to={}",
+            from,
+            outpoint.tx.to_hex(),
+            outpoint.index,
+            hex::encode(script.bytes()),
+            to
+        );
+        self.get(&query)
+    }
+
+    /// Submit a signed HTLC refund transaction.
+    #[allow(clippy::too_many_arguments)]
+    pub fn submit_refund_htlc(
+        &self,
+        from: &str,
+        outpoint: kovanica_state::OutPoint,
+        script: kovanica_state::htlc::HtlcScript,
+        to: &str,
+        sighash: &str,
+        sig: &str,
+    ) -> Result<Value> {
+        let query = format!(
+            "/api/htlc/refund/submit?from={}&outpoint_tx={}&outpoint_index={}&script={}&to={}&sighash={}&sig={}",
+            from,
+            outpoint.tx.to_hex(),
+            outpoint.index,
+            hex::encode(script.bytes()),
+            to,
+            sighash,
+            sig
+        );
+        self.post_form(&query)
+    }
+
+    /// Query the balance locked to an HTLC script.
+    pub fn htlc_balance(&self, script: &kovanica_state::htlc::HtlcScript) -> Result<u64> {
+        let script_hex = hex::encode(script.bytes());
+        let val = self.get(&format!("/api/htlc/balance?script={script_hex}"))?;
+        val.get("balance")
+            .and_then(|v| v.as_u64())
+            .ok_or_else(|| anyhow::anyhow!("no balance in response"))
+    }
+
+    /// Derive an RWA asset id from issuer key + parameters.
+    pub fn rwa_derive(&self, issuer: &str, class: &str, id: &str, version: u8) -> Result<Value> {
+        let query = format!(
+            "/api/rwa/derive?issuer={}&class={}&id={}&version={}",
+            issuer, class, id, version
+        );
+        self.get(&query)
+    }
+
+    /// Get RWA detail by asset ID.
+    pub fn rwa_detail(&self, asset_id: &str) -> Result<Value> {
+        self.get(&format!("/api/rwa/{asset_id}"))
+    }
+
     /// Get NFT detail by asset ID.
     pub fn nft_detail(&self, asset_id: &str) -> Result<Value> {
         self.get(&format!("/api/nft/{asset_id}"))
@@ -221,18 +306,6 @@ impl Client {
     /// Get collection detail by collection ID.
     pub fn collection_detail(&self, collection_id: &str) -> Result<Value> {
         self.get(&format!("/api/collection/{collection_id}"))
-    }
-
-    /// Get RWA detail by asset ID.
-    pub fn rwa_detail(&self, asset_id: &str) -> Result<Value> {
-        self.get(&format!("/api/rwa/{asset_id}"))
-    }
-
-    /// Derive an RWA asset id from issuer key + parameters.
-    pub fn rwa_derive(&self, issuer: &str, class: &str, id: &str, version: u8) -> Result<Value> {
-        self.post_form(&format!(
-            "/api/rwa/derive?issuer={issuer}&class={class}&id={id}&version={version}"
-        ))
     }
 
     /// Transaction history for an address.
@@ -245,70 +318,69 @@ impl Client {
         self.get(&format!("/api/fee_estimate?amount={amount}"))
     }
 
-    /// Block detail by id.
+    /// Block detail by ID.
     pub fn block_detail(&self, id: &str) -> Result<Value> {
         self.get(&format!("/api/block/{id}"))
     }
 
-    /// Transaction detail by id.
+    /// Transaction detail by ID.
     pub fn tx_detail(&self, id: &str) -> Result<Value> {
         self.get(&format!("/api/tx/{id}"))
     }
 
-    /// Address detail (balance + history summary).
+    /// Address detail by address.
     pub fn address_detail(&self, addr: &str) -> Result<Value> {
         self.get(&format!("/api/address/{addr}"))
     }
 
-    /// Broadcast a fully-encoded, already-signed transaction blob.
+    /// Submit a signed transaction (generic).
     pub fn submit_tx(&self, tx_hex: &str) -> Result<Value> {
-        let body = serde_json::json!({ "tx_hex": tx_hex });
-        self.post_json("/api/submit_tx", &body)
+        self.post_form(&format!("/api/submit?tx={tx_hex}"))
     }
 
-    /// Testnet faucet: request KVNC from the operator wallet.
-    pub fn faucet(&self, to: &str, amount: u64) -> Result<Value> {
-        self.post_form(&format!("/api/faucet?to={to}&amount={amount}"))
+    /// Faucet request.
+    pub fn faucet(&self, address: &str, amount: u64) -> Result<Value> {
+        self.post_form(&format!("/api/faucet?to={address}&amount={amount}"))
     }
 
-    /// Create a multisig (M-of-N P2SH) address from public keys.
-    pub fn multisig_create(&self, threshold: u8, pubkeys_hex: &[String]) -> Result<Value> {
+    /// Multisig create.
+    pub fn multisig_create(&self, m: u8, pubkeys: &[[u8; 32]]) -> Result<Value> {
+        let pubkeys_hex: Vec<String> = pubkeys.iter().map(hex::encode).collect();
         let body = serde_json::json!({
-            "threshold": threshold,
-            "pubkeys_hex": pubkeys_hex,
+            "m": m,
+            "pubkeys": pubkeys_hex,
         });
         self.post_json("/api/multisig/create", &body)
     }
 
-    /// Build an unsigned multisig spend; returns `tx_blob_hex` + `sighash_hex`.
-    pub fn multisig_build(&self, address: &str, outputs: &[(String, u64)]) -> Result<Value> {
-        let outputs: Vec<serde_json::Value> = outputs
-            .iter()
-            .map(|(addr, amount)| serde_json::json!({ "address": addr, "amount_atoms": amount }))
-            .collect();
-        let body = serde_json::json!({
-            "address": address,
-            "outputs": outputs,
-        });
-        self.post_json("/api/multisig/build", &body)
+    /// Multisig build.
+    pub fn multisig_build(
+        &self,
+        from: &str,
+        to: &str,
+        amount: u64,
+        asset_id: Option<kovanica_state::AssetId>,
+    ) -> Result<Value> {
+        let mut query = format!("/api/multisig/build?from={from}&to={to}&amount={amount}");
+        if let Some(asset) = asset_id {
+            query.push_str(&format!("&asset_id={}", hex::encode(asset.as_bytes())));
+        }
+        self.get(&query)
     }
 
-    /// Combine partial signatures into a signed multisig transaction.
-    pub fn multisig_combine(
-        &self,
-        tx_blob_hex: &str,
-        partial_sigs_hex: &[String],
-    ) -> Result<Value> {
-        let body = serde_json::json!({
-            "tx_blob_hex": tx_blob_hex,
-            "partial_sigs_hex": partial_sigs_hex,
-        });
+    /// Multisig combine partial signatures.
+    pub fn multisig_combine(&self, partials: &[Value]) -> Result<Value> {
+        let body = serde_json::json!({ "partials": partials });
         self.post_json("/api/multisig/combine", &body)
     }
 
-    /// Submit a fully-signed multisig transaction.
-    pub fn multisig_submit(&self, signed_tx_blob_hex: &str) -> Result<Value> {
-        let body = serde_json::json!({ "signed_tx_blob_hex": signed_tx_blob_hex });
+    /// Multisig submit.
+    pub fn multisig_submit(&self, tx_hex: &str, signatures: &[[u8; 64]]) -> Result<Value> {
+        let sigs_hex: Vec<String> = signatures.iter().map(hex::encode).collect();
+        let body = serde_json::json!({
+            "tx": tx_hex,
+            "signatures": sigs_hex,
+        });
         self.post_json("/api/multisig/submit", &body)
     }
 }

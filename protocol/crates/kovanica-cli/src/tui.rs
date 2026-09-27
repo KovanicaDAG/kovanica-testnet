@@ -401,7 +401,7 @@ impl App {
         let wallet = crate::Wallet::load(&PathBuf::from(&key_path))?;
         let from_addr = wallet.address().to_hex();
 
-        let prepared = self.client.prepare_htlc(
+        let prepared = self.client.prepare_create_htlc(
             &from_addr,
             amount,
             &recipient_pk,
@@ -420,7 +420,16 @@ impl App {
         let sig = wallet.keypair().sign(&sighash);
         let sig_hex = hex::encode(sig);
 
-        let result = self.client.submit_htlc(&from_addr, sighash_hex, &sig_hex)?;
+        let result = self.client.submit_create_htlc(
+            &from_addr,
+            amount,
+            &recipient_pk,
+            &preimage_hash,
+            timeout,
+            asset_id_opt,
+            sighash_hex,
+            &sig_hex,
+        )?;
         self.output = format!(
             "HTLC created: tx={}",
             result
@@ -956,9 +965,33 @@ impl App {
         let wallet = crate::Wallet::load(&PathBuf::from(&key_path))?;
         let from = wallet.address().to_hex();
 
-        let result =
-            self.client
-                .redeem_htlc(&from, outpoint, script, preimage, &to_addr.to_hex())?;
+        let prepared = self.client.prepare_redeem_htlc(
+            &from,
+            outpoint,
+            script,
+            preimage,
+            &to_addr.to_hex(),
+        )?;
+
+        let sighash_hex = prepared
+            .get("sighash")
+            .and_then(|v| v.as_str())
+            .context("missing sighash")?;
+        let sighash = hex::decode(sighash_hex.trim()).context("sighash not hex")?;
+
+        let wallet = crate::Wallet::load(&PathBuf::from(&key_path))?;
+        let sig = wallet.keypair().sign(&sighash);
+        let sig_hex = hex::encode(sig);
+
+        let result = self.client.submit_redeem_htlc(
+            &from,
+            outpoint,
+            script,
+            preimage,
+            &to_addr.to_hex(),
+            sighash_hex,
+            &sig_hex,
+        )?;
         self.output = format!(
             "HTLC redeemed: tx={}",
             result
@@ -1002,9 +1035,28 @@ impl App {
         let wallet = crate::Wallet::load(&PathBuf::from(&key_path))?;
         let from = wallet.address().to_hex();
 
-        let result = self
-            .client
-            .refund_htlc(&from, outpoint, script, &to_addr.to_hex())?;
+        let prepared =
+            self.client
+                .prepare_refund_htlc(&from, outpoint, script, &to_addr.to_hex())?;
+
+        let sighash_hex = prepared
+            .get("sighash")
+            .and_then(|v| v.as_str())
+            .context("missing sighash")?;
+        let sighash = hex::decode(sighash_hex.trim()).context("sighash not hex")?;
+
+        let wallet = crate::Wallet::load(&PathBuf::from(&key_path))?;
+        let sig = wallet.keypair().sign(&sighash);
+        let sig_hex = hex::encode(sig);
+
+        let result = self.client.submit_refund_htlc(
+            &from,
+            outpoint,
+            script,
+            &to_addr.to_hex(),
+            sighash_hex,
+            &sig_hex,
+        )?;
         self.output = format!(
             "HTLC refunded: tx={}",
             result

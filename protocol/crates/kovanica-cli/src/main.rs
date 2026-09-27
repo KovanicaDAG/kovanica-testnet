@@ -583,7 +583,7 @@ fn htlc(client: &Client, cmd: HtlcCommand) -> Result<()> {
                 None
             };
 
-            let prepared = client.prepare_htlc(
+            let prepared = client.prepare_create_htlc(
                 &from,
                 amount,
                 &recipient_pk,
@@ -601,7 +601,16 @@ fn htlc(client: &Client, cmd: HtlcCommand) -> Result<()> {
             let sig = wallet.keypair().sign(&sighash);
             let sig_hex = hex::encode(sig);
 
-            let result = client.submit_htlc(&from, sighash_hex, &sig_hex)?;
+            let result = client.submit_create_htlc(
+                &from,
+                amount,
+                &recipient_pk,
+                &preimage_hash,
+                timeout,
+                asset_id,
+                sighash_hex,
+                &sig_hex,
+            )?;
             print_json(&result)?;
             Ok(())
         }
@@ -639,8 +648,34 @@ fn htlc(client: &Client, cmd: HtlcCommand) -> Result<()> {
                 .map_err(|_| anyhow::anyhow!("preimage must be 32 bytes"))?;
             let to_addr = parse_address(&to)?;
 
-            let _wallet = Wallet::load(&key)?;
-            let sent = client.redeem_htlc(&from, outpoint, script, preimage, &to_addr.to_hex())?;
+            let wallet = Wallet::load(&key)?;
+            let sighash_hex = {
+                let prepared = client.prepare_redeem_htlc(
+                    &from,
+                    outpoint,
+                    script,
+                    preimage,
+                    &to_addr.to_hex(),
+                )?;
+                let sighash_hex = prepared
+                    .get("sighash")
+                    .and_then(|v| v.as_str())
+                    .context("missing sighash")?
+                    .to_string(); // clone to own the string
+                sighash_hex
+            };
+            let sighash = hex::decode(sighash_hex.trim()).context("sighash not hex")?;
+            let sig = wallet.keypair().sign(&sighash);
+            let sig_hex = hex::encode(sig);
+            let sent = client.submit_redeem_htlc(
+                &from,
+                outpoint,
+                script,
+                preimage,
+                &to_addr.to_hex(),
+                &sighash_hex,
+                &sig_hex,
+            )?;
             println!("Redeemed HTLC");
             print_json(&sent)?;
             Ok(())
@@ -671,8 +706,28 @@ fn htlc(client: &Client, cmd: HtlcCommand) -> Result<()> {
                 .map_err(|e| anyhow::anyhow!("invalid script: {e:?}"))?;
             let to_addr = parse_address(&to)?;
 
-            let _wallet = Wallet::load(&key)?;
-            let sent = client.refund_htlc(&from, outpoint, script, &to_addr.to_hex())?;
+            let wallet = Wallet::load(&key)?;
+            let sighash_hex = {
+                let prepared =
+                    client.prepare_refund_htlc(&from, outpoint, script, &to_addr.to_hex())?;
+                let sighash_hex = prepared
+                    .get("sighash")
+                    .and_then(|v| v.as_str())
+                    .context("missing sighash")?
+                    .to_string();
+                sighash_hex
+            };
+            let sighash = hex::decode(sighash_hex.trim()).context("sighash not hex")?;
+            let sig = wallet.keypair().sign(&sighash);
+            let sig_hex = hex::encode(sig);
+            let sent = client.submit_refund_htlc(
+                &from,
+                outpoint,
+                script,
+                &to_addr.to_hex(),
+                &sighash_hex,
+                &sig_hex,
+            )?;
             println!("Refunded HTLC");
             print_json(&sent)?;
             Ok(())
@@ -835,7 +890,7 @@ fn rwa(client: &Client, cmd: RwaCommand) -> Result<()> {
             // For now, we'll use the prepare endpoint with asset_id
             // The metadata handling would need API support
             let prepared =
-                client.prepare_transfer_asset(&from, amount, &to_addr.to_hex(), Some(asset_id))?;
+                client.prepare_transfer_asset(&from, &to_addr.to_hex(), amount, Some(asset_id))?;
             let sighash_hex = prepared
                 .get("sighash")
                 .and_then(|v| v.as_str())
