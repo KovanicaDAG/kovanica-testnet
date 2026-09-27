@@ -3,6 +3,12 @@
 # remain separate repos at ~/kovanica-agent and ~/kovanica-brain-vault.
 /trezor-coin-def/
 
+# Cargo build output. Unanchored, so it covers every workspace in the tree
+# (protocol/, node/, sdk/, ledger-app/, wallet/) — protocol/target alone is
+# ~16 GB and was previously untracked-but-committable, since only the nested
+# per-crate .gitignore files existed.
+target/
+
 # Runtime data (unversioned content inside data/ handled by data/.gitignore)
 *.log
 .dev.log
