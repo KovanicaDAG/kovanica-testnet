@@ -111,6 +111,8 @@ enum OfferStep {
     PreimageHash,
     Timeout,
     ExpiresAt,
+    /// Terminal step: the expiry has been collected, run the subcommand.
+    Submit,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -177,6 +179,7 @@ struct OfferState {
     take_amount: Option<u64>,
     preimage_hash: Option<String>,
     timeout: Option<u32>,
+    expires_at: Option<String>,
 }
 
 #[derive(Default)]
@@ -738,8 +741,21 @@ impl App {
                 self.offer_state.timeout = Some(timeout);
                 self.start_input(
                     "Enter expiration timestamp (ISO 8601 or Unix timestamp): ".to_string(),
-                    InputMode::Offer(OfferStep::ExpiresAt),
+                    InputMode::Offer(OfferStep::Submit),
                 );
+            }
+            OfferStep::Submit => {
+                let expires_at = input.trim();
+                if expires_at.is_empty() {
+                    self.output = "Expiration is required (ISO 8601 or Unix timestamp)".to_string();
+                    self.show_output = true;
+                    return Ok(());
+                }
+                self.offer_state.expires_at = Some(expires_at.to_string());
+                match self.offer_state.sub_command.as_deref() {
+                    Some("verify") => self.execute_offer_verify(),
+                    _ => self.execute_offer_create(),
+                }
             }
         }
         Ok(())
@@ -1015,70 +1031,180 @@ impl App {
         Ok(())
     }
 
+    /// Render the collected offer as a local summary.
+    ///
+    /// The node exposes no `/api/offer/*` endpoint, so an offer is never
+    /// broadcast and nothing is signed here — this reports exactly what would
+    /// be submitted and says so, rather than implying an offer was created.
+    fn execute_offer_create(&mut self) {
+        let s = &self.offer_state;
+        let asset = |a: &Option<String>| match a {
+            Some(v) if !v.is_empty() => v.clone(),
+            _ => "KVNC (native)".to_string(),
+        };
+        self.output = format!(
+            "Offer prepared (local only — no /api/offer endpoint exists, nothing was broadcast or signed):\n  \
+             Subcommand: {}\n  \
+             Key:       {}\n  \
+             Maker:     {}\n  \
+             Give:      {} atoms of {}\n  \
+             Take:      {} atoms of {}\n  \
+             Preimage:  {}\n  \
+             Timeout:   {} blocks\n  \
+             Expires:   {}",
+            s.sub_command.as_deref().unwrap_or("create"),
+            s.key_path.as_deref().unwrap_or("kovanica.key"),
+            s.maker.as_deref().unwrap_or("(unset)"),
+            s.give_amount.unwrap_or(0),
+            asset(&s.give_asset),
+            s.take_amount.unwrap_or(0),
+            asset(&s.take_asset),
+            s.preimage_hash.as_deref().unwrap_or("(unset)"),
+            s.timeout.unwrap_or(0),
+            s.expires_at.as_deref().unwrap_or("(unset)"),
+        );
+        self.show_output = true;
+    }
+
+    /// Check the collected offer for internal consistency.
+    ///
+    /// There is no on-chain offer to verify against (no `/api/offer/*`
+    /// endpoint), so this validates the parameters themselves and reports each
+    /// field, instead of claiming a verification that never happened.
+    fn execute_offer_verify(&mut self) {
+        let s = &self.offer_state;
+        let is_hex = |v: &Option<String>, n: usize| v.as_ref().is_some_and(|x| x.len() == n);
+        let mut checks: Vec<(&str, bool)> = vec![
+            ("maker is 32 bytes of hex", is_hex(&s.maker, 64)),
+            (
+                "give asset is 32 bytes of hex (or native)",
+                s.give_asset
+                    .as_ref()
+                    .map_or(true, |v| v.is_empty() || v.len() == 64),
+            ),
+            (
+                "take asset is 32 bytes of hex (or native)",
+                s.take_asset
+                    .as_ref()
+                    .map_or(true, |v| v.is_empty() || v.len() == 64),
+            ),
+            (
+                "give amount is non-zero",
+                s.give_amount.is_some_and(|a| a > 0),
+            ),
+            (
+                "take amount is non-zero",
+                s.take_amount.is_some_and(|a| a > 0),
+            ),
+            (
+                "preimage hash is 32 bytes of hex",
+                is_hex(&s.preimage_hash, 64),
+            ),
+            ("timeout is set", s.timeout.is_some()),
+            (
+                "expiry is set",
+                s.expires_at.as_ref().is_some_and(|v| !v.is_empty()),
+            ),
+        ];
+        let failed = checks.iter().filter(|(_, ok)| !ok).count();
+        let body = checks
+            .iter()
+            .map(|(label, ok)| format!("  [{}] {label}", if *ok { "ok" } else { "FAIL" }))
+            .collect::<Vec<_>>()
+            .join("\n");
+        self.output = format!(
+            "Offer parameter check (local only — no /api/offer endpoint exists, so there is no \
+             on-chain offer to verify):\n{body}\n{}",
+            if failed == 0 {
+                "All parameters are well-formed."
+            } else {
+                "Some parameters are not usable as an offer."
+            }
+        );
+        self.show_output = true;
+        checks.clear();
+    }
+
+    /// The RWA parameters the wizard gathered.
+    fn rwa_params(&self) -> (String, String, String, u8) {
+        let s = &self.rwa_state;
+        (
+            s.issuer.clone().unwrap_or_default(),
+            s.class.clone().unwrap_or_default(),
+            s.id.clone().unwrap_or_default(),
+            s.version.unwrap_or(1),
+        )
+    }
+
+    /// Resolve the RWA asset id the node derives for the current parameters.
+    fn rwa_asset_id(&self) -> Result<String> {
+        let (issuer, class, id, version) = self.rwa_params();
+        let derived = self.client.rwa_derive(&issuer, &class, &id, version)?;
+        derived
+            .get("asset_id")
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+            .ok_or_else(|| anyhow::anyhow!("node returned no asset_id for this RWA derive"))
+    }
+
     async fn execute_rwa_derive(&mut self) -> Result<()> {
-        let _key_path = self
-            .rwa_state
-            .key_path
-            .clone()
-            .unwrap_or_else(|| "kovanica.key".to_string());
-        let issuer = self.rwa_state.issuer.clone().unwrap_or_default();
-        let class = self.rwa_state.class.clone().unwrap_or_default();
-        let id = self.rwa_state.id.clone().unwrap_or_default();
-        let version = self.rwa_state.version.unwrap_or(1);
-
+        let (issuer, class, id, version) = self.rwa_params();
+        let derived = self.client.rwa_derive(&issuer, &class, &id, version)?;
+        let hex = derived
+            .get("asset_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("(none)");
+        let kvnc = derived
+            .get("asset_id_kvnc")
+            .and_then(|v| v.as_str())
+            .unwrap_or("(none)");
         self.output = format!(
-            "RWA derive: issuer={}, class={}, id={}, version={}",
-            issuer, class, id, version
+            "RWA asset id derived by the node (POST /api/rwa/derive):\n  Issuer:  {issuer}\n  Class:   {class}\n  ID:      {id}\n  Version: {version}\n  Asset:   {hex}\n  KVNC:    {kvnc}"
         );
         self.show_output = true;
         Ok(())
     }
 
+    /// RWA issuance is not implementable client-side yet.
+    ///
+    /// The node exposes only the read-only `/api/rwa/derive` and
+    /// `/api/rwa/{asset_id}` routes — there is no endpoint to issue against, so
+    /// this reports that plainly instead of printing a success line for an
+    /// asset that was never created.
     async fn execute_rwa_issue(&mut self) -> Result<()> {
-        let _key_path = self
-            .rwa_state
-            .key_path
-            .clone()
-            .unwrap_or_else(|| "kovanica.key".to_string());
-        let issuer = self.rwa_state.issuer.clone().unwrap_or_default();
-        let class = self.rwa_state.class.clone().unwrap_or_default();
-        let id = self.rwa_state.id.clone().unwrap_or_default();
-        let amount = self.rwa_state.amount.unwrap();
-
-        self.output = format!(
-            "RWA issue: issuer={}, class={}, id={}, amount={}",
-            issuer, class, id, amount
-        );
-        self.show_output = true;
-        Ok(())
+        let s = &self.rwa_state;
+        Err(anyhow::anyhow!(
+            "RWA issue is NOT implemented. The node exposes only the read-only \
+             /api/rwa/derive and /api/rwa/{{asset_id}} routes — there is no issue endpoint, \
+             so nothing was signed or broadcast. Collected: issuer={}, class={}, id={}, \
+             amount={} atoms, key={}.",
+            s.issuer.as_deref().unwrap_or("(unset)"),
+            s.class.as_deref().unwrap_or("(unset)"),
+            s.id.as_deref().unwrap_or("(unset)"),
+            s.amount.unwrap_or(0),
+            s.key_path.as_deref().unwrap_or("(unset)"),
+        ))
     }
 
+    /// RWA burn is not implementable client-side yet. See [`Self::execute_rwa_issue`].
     async fn execute_rwa_burn(&mut self) -> Result<()> {
-        let _key_path = self
-            .rwa_state
-            .key_path
-            .clone()
-            .unwrap_or_else(|| "kovanica.key".to_string());
-        let issuer = self.rwa_state.issuer.clone().unwrap_or_default();
-        let class = self.rwa_state.class.clone().unwrap_or_default();
-        let id = self.rwa_state.id.clone().unwrap_or_default();
-
-        self.output = format!("RWA burn: issuer={}, class={}, id={}", issuer, class, id);
-        self.show_output = true;
-        Ok(())
+        let s = &self.rwa_state;
+        let (issuer, class, id, version) = self.rwa_params();
+        let asset_id = self
+            .rwa_asset_id()
+            .unwrap_or_else(|_| "(underivable)".to_string());
+        Err(anyhow::anyhow!(
+            "RWA burn is NOT implemented. The node exposes only the read-only \
+             /api/rwa/derive and /api/rwa/{{asset_id}} routes — there is no burn endpoint, \
+             so nothing was signed or broadcast. Collected: issuer={issuer}, class={class}, \
+             id={id}, version={version}, resolved asset={asset_id}, key={}.",
+            s.key_path.as_deref().unwrap_or("(unset)"),
+        ))
     }
 
     async fn execute_rwa_info(&mut self) -> Result<()> {
-        let _key_path = self
-            .rwa_state
-            .key_path
-            .clone()
-            .unwrap_or_else(|| "kovanica.key".to_string());
-        let _class = self.rwa_state.class.clone().unwrap_or_default();
-        let id = self.rwa_state.id.clone().unwrap_or_default();
-
-        // Query the node for RWA info
-        let result = self.client.nft_detail(&id)?;
+        let asset_id = self.rwa_asset_id()?;
+        let result = self.client.rwa_detail(&asset_id)?;
         self.output = serde_json::to_string_pretty(&result)?;
         self.show_output = true;
         Ok(())

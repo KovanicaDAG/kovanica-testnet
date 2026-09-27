@@ -15,7 +15,6 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use ed25519_dalek::{Signer, SigningKey};
-use kovanica_cli::Wallet;
 use kovanica_dag::{
     AuthorityError, AuthorityPublicKey, AuthoritySet, AuthorityUpdateTx, Block, BlockId, Dag,
     PoAConfig, POA_NOMINAL_WORK,
@@ -27,6 +26,7 @@ use kovanica_state::{
     OutPoint, Sig, StealthAddress, Transaction, TxId, TxInput, TxOutput, UtxoSet, VaultScript,
     COINBASE_MATURITY, DEFAULT_HALVING_ERA, FEE_PRODUCER_DEN, FEE_PRODUCER_NUM,
 };
+use kovanica_wallet::Wallet;
 
 use crate::mempool_v2::{MempoolConfig, MempoolV2};
 use crate::metrics::{
