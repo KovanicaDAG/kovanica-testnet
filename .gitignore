@@ -27,3 +27,5 @@ target/
 
 # Vault transfer archives (regenerate with ./scripts/build-vault.sh --zip)
 /dist/
+# Testnet authority keys (secret)
+authority-keys/*.env
