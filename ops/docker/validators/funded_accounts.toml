@@ -1,0 +1,28 @@
+# Phase 12.4 — Pre-funded accounts for TPS benchmark.
+# These accounts are used as funders in the benchmark to distribute initial
+# balances to derived bench senders. They are NOT validators.
+
+[[account]]
+# sender0
+address = "51998ccfdfffd83d9724490818ca22a97a030d18bb2a9d74668f72b81c3fa588"
+balance = 100000000000000  # 100,000 KUNA = 100 trillion atoms
+
+[[account]]
+# sender1
+address = "e7f162a10bec559afea195e4dce84b69568d5d2cb0963eb446c0685e2b17f2f0"
+balance = 100000000000000  # 100,000 KUNA
+
+[[account]]
+# sender2
+address = "d1347773501b2378b98e8b0cf3792234c2b36544119b6b7c49a840c48572acd0"
+balance = 100000000000000  # 100,000 KUNA
+
+[[account]]
+# sender3
+address = "81e6ab855d3a280b796a4cd0c86bb9ef48228dc766893c72af515cf2c797ec40"
+balance = 100000000000000  # 100,000 KUNA
+
+[[account]]
+# sender4
+address = "eaf4698e649eced91cc5db6e1bdb099409e4e3c7013e135d16241790e8af3772"
+balance = 100000000000000  # 100,000 KUNA

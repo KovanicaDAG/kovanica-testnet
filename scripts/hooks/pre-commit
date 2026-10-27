@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# gitleaks pre-commit hook: scans staged content, never the working tree, so a
+# staged secret is caught even if the file was fixed afterwards.
+#
+# Skips with a warning when gitleaks is not installed, unless
+# GITLEAKS_STRICT=1. Install the hook with ./scripts/install-git-hooks.sh.
+#
+# Bypass for a false positive you are about to allowlist: `git commit --no-verify`.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CONFIG_FILE="$REPO_ROOT/.gitleaks.toml"
+
+if ! command -v gitleaks &>/dev/null; then
+    if [[ "${GITLEAKS_STRICT:-0}" == "1" ]]; then
+        echo "ERROR: gitleaks not found in PATH and GITLEAKS_STRICT=1" >&2
+        exit 1
+    fi
+    echo "WARNING: gitleaks not installed, skipping pre-commit secret scan"
+    echo "         install it (see docs/SECRETS-SCANNING.md) or export GITLEAKS_STRICT=1 to enforce" >&2
+    exit 0
+fi
+
+# `git --staged` is the current spelling (gitleaks >= 8.19). Older releases only
+# have `protect --staged`; probing costs one invocation and avoids relying on a
+# deprecated alias that will disappear.
+if gitleaks git --help >/dev/null 2>&1; then
+    SCAN_ARGS=(git --staged)
+else
+    SCAN_ARGS=(protect --staged)
+fi
+
+echo "Running gitleaks on staged changes..."
+cd "$REPO_ROOT"
+if ! gitleaks "${SCAN_ARGS[@]}" --config "$CONFIG_FILE" --redact --no-banner --exit-code 1; then
+    echo >&2
+    echo "Commit blocked: gitleaks found something in the staged changes." >&2
+    echo "Remove the secret, or allowlist it in .gitleaks.toml with a reason." >&2
+    exit 1
+fi

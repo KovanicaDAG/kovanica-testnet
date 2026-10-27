@@ -1,0 +1,98 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.wasm
+
+# Bundled KVP-102 token contract, shipped inside both APKs — track it explicitly
+!apps/android/app/src/main/assets/kovanica_token.wasm
+!apps/android-wallet/app/src/main/assets/kovanica_token.wasm
+
+# Android UniFFI debug libraries. Rebuild with:
+# cargo build -p kovanica-light-ffi --target aarch64-linux-android
+apps/android/**/jniLibs/**/*.so
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Node (for web frontend later)
+node_modules/
+dist/
+build/
+
+# Keys/secrets (never commit!)
+*.pem
+*.key
+keystore/
+*.keystore
+
+# Deepwork progress (local only)
+.slim/deepwork/
+
+# BEGIN oh-my-opencode-slim worktrees
+.slim/worktrees/
+.slim/worktrees.json
+# END oh-my-opencode-slim worktrees
+
+# Nested slim worktree copies (never track a full repo copy inside the repo)
+**/.slim/worktrees/
+
+# Generated devnet databases (rebuilt at runtime, never commit)
+data/*.redb
+
+# Phase 16.6 generated devnet genesis + seeds (regenerate with ops/docker/validators/generate.sh)
+ops/docker/validators/genesis_validators.toml
+
+# Local soak override (remaps node1 host RPC off 8545 to avoid the live testnet node)
+docker-compose.soak.yml
+
+# Android Gradle build cache (regenerated, never commit)
+apps/android/.gradle/
+
+# Android local SDK path (machine-specific, never commit)
+apps/android/local.properties
+
+# Android wallet module (mirrors the Light module's ignores)
+apps/android-wallet/**/jniLibs/**/*.so
+apps/android-wallet/.gradle/
+apps/android-wallet/local.properties
+
+# Android comms module
+apps/android-comms/**/jniLibs/**/*.so
+apps/android-comms/.gradle/
+apps/android-comms/local.properties
+
+# Guard: never track a full repo copy nested inside the repo
+/kovanica/
+
+# Validator / node key material (never commit)
+**/validators/*.dat
+**/node-data/*.dat
+**/v.dat
+**/validator*.key
+**/p2p_node.key
+
+.env.txt
+.env.*
+genesis/chain4/
+
+# Agent internals & scratch files
+scratch/
+.agents/
+ORIGINAL_REQUEST.md
+

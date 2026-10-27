@@ -1,0 +1,31 @@
+{
+  "name": "@kovanica/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Kovanica Comms desktop client (Tauri v2 + React + Vite)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@kovanica/api-client": "file:../../packages/api-client",
+    "@kovanica/comms": "file:../../packages/comms",
+    "@kovanica/signer": "file:../../packages/signer",
+    "@tauri-apps/api": "^2.1.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  },
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,47 @@
+# ops/chaos/docker-compose.chaos.yml
+#
+# Override used ONLY by ops/chaos/kill-mid-commit.sh. It makes a chaos run
+# completely isolated from a local or live testnet stack:
+#
+#   1. unique container names (`chaos-*`) so the chaos project can run next to
+#      an existing `kovanica-testnet-*` stack — `docker-compose.yml` hard-codes
+#      `container_name: kovanica-testnet-*`, which would otherwise collide;
+#   2. unique published host RPC ports (18545-18548) so a running testnet on
+#      8545-8548 is never touched (same `!override` technique as
+#      `docker-compose.soak.yml`);
+#   3. **no external bootnodes**: `docker-compose.yml` points val1-val3 at
+#      `testnet.kovanica.online:8000`, so a naive chaos stack would try to join
+#      the live testnet. Here every node only knows the local `seed`.
+#
+# Volumes are project-prefixed (`kovanica-chaos_*`), so a chaos run never reads
+# or writes the testnet's chain data. `docker compose -p kovanica-chaos ... down
+# -v` wipes only the chaos chain.
+
+services:
+  seed:
+    container_name: chaos-seed
+    environment:
+      KOVANICA_BOOTNODES: ""
+    ports: !override
+      - "127.0.0.1:18545:8545"
+
+  val1:
+    container_name: chaos-val1
+    environment:
+      KOVANICA_BOOTNODES: "seed:8000"
+    ports: !override
+      - "127.0.0.1:18546:8546"
+
+  val2:
+    container_name: chaos-val2
+    environment:
+      KOVANICA_BOOTNODES: "seed:8000"
+    ports: !override
+      - "127.0.0.1:18547:8547"
+
+  val3:
+    container_name: chaos-val3
+    environment:
+      KOVANICA_BOOTNODES: "seed:8000"
+    ports: !override
+      - "127.0.0.1:18548:8548"

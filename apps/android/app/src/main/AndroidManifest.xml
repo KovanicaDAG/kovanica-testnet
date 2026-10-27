@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Optional: the scanner is one path into the send field, so a camera-less device still installs. -->
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+    <application
+        android:label="Kovanica Lightnode"
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".MessagesActivity"
+            android:exported="false"
+            android:label="Messages"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".ReceiveActivity"
+            android:exported="false"
+            android:label="Receive"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".HowToUseActivity"
+            android:exported="false"
+            android:label="How to use"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".HistoryActivity"
+            android:exported="false"
+            android:label="History"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="Settings"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".AddressBookActivity"
+            android:exported="false"
+            android:label="Contacts"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".ScanActivity"
+            android:exported="false"
+            android:label="Scan"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".CreateTokenActivity"
+            android:exported="false"
+            android:label="Create token"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+    </application>
+</manifest>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kovanica Console</title>
+  </head>
+  <body>
+    <main class="app">
+      <header class="top">
+        <div>
+          <h1>Kovanica Console</h1>
+          <p class="muted">0.1.0 · wallet</p>
+        </div>
+      </header>
+
+      <section class="panel" aria-labelledby="connection-heading">
+        <h2 id="connection-heading">Connection</h2>
+        <label for="rpc">RPC endpoint</label>
+        <div class="row">
+          <input id="rpc" name="rpc" type="text" spellcheck="false" autocomplete="off" />
+          <button id="save" type="button">Save</button>
+          <button id="reset" type="button">Use default</button>
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+        <p id="endpoint" class="muted"></p>
+        <p id="error" class="error" role="alert" hidden></p>
+      </section>
+
+      <section class="panel" aria-labelledby="node-heading">
+        <h2 id="node-heading">Node</h2>
+        <dl id="status" class="readout"></dl>
+        <ul id="peers" class="peers"></ul>
+      </section>
+
+      <section class="panel" aria-labelledby="wallet-heading">
+        <h2 id="wallet-heading">Wallet</h2>
+        <p id="wallet-error" class="error" role="alert" hidden></p>
+
+        <div id="wallet-absent">
+          <label for="new-password">New password</label>
+          <input id="new-password" type="password" autocomplete="new-password" />
+          <div class="row">
+            <button id="create-wallet" type="button">Create key</button>
+          </div>
+          <label for="import-phrase">Recovery phrase</label>
+          <textarea id="import-phrase" rows="3" autocomplete="off" spellcheck="false"></textarea>
+          <label for="import-password">Password</label>
+          <input id="import-password" type="password" autocomplete="new-password" />
+          <div class="row">
+            <button id="import-wallet" type="button">Import key</button>
+          </div>
+        </div>
+
+        <div id="wallet-mnemonic" hidden>
+          <p id="mnemonic-lock-warning" class="warning" role="alert" hidden></p>
+          <p id="mnemonic-warning" class="warning"></p>
+          <p id="mnemonic-text" class="phrase"></p>
+          <div class="row">
+            <button id="mnemonic-done" type="button">I have saved this phrase</button>
+          </div>
+        </div>
+
+        <div id="wallet-locked" hidden>
+          <p>The wallet is locked.</p>
+          <p id="locked-address" class="muted"></p>
+          <p id="locked-backup" class="muted"></p>
+          <label for="unlock-password">Password</label>
+          <input id="unlock-password" type="password" autocomplete="current-password" />
+          <div class="row">
+            <button id="unlock-wallet" type="button">Unlock</button>
+            <button id="show-phrase" type="button">Show recovery phrase again</button>
+          </div>
+        </div>
+
+        <div id="wallet-open" hidden>
+          <dl id="wallet-readout" class="readout"></dl>
+          <div class="row">
+            <button id="lock-wallet" type="button">Lock</button>
+            <button id="refresh-wallet" type="button">Refresh</button>
+          </div>
+          <p id="open-backup" class="muted"></p>
+          <label for="open-password">Password</label>
+          <input id="open-password" type="password" autocomplete="current-password" />
+          <div class="row">
+            <button id="show-phrase-open" type="button">Show recovery phrase again</button>
+          </div>
+          <label for="recipient">Recipient</label>
+          <input id="recipient" type="text" autocomplete="off" spellcheck="false" />
+          <label for="amount">Amount (KUNA)</label>
+          <input id="amount" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" />
+          <div class="row">
+            <button id="review-transfer" type="button">Review</button>
+          </div>
+          <div id="review" hidden>
+            <h3>Review transfer</h3>
+            <dl id="review-rows" class="readout"></dl>
+            <label id="mainnet-confirm-label" class="check" hidden>
+              <input id="mainnet-confirm" type="checkbox" />
+              I confirm this transfer on chain 1.
+            </label>
+            <button id="send-transfer" type="button" disabled>Send</button>
+          </div>
+          <h3 id="history-heading">History (reported by node)</h3>
+          <p id="history-empty" class="muted">No transfers reported by the node.</p>
+          <ul id="history" class="history"></ul>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

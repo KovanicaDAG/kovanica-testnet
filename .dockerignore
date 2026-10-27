@@ -1,0 +1,53 @@
+# Repository metadata and Rust build output
+.git
+**/.git
+target
+**/target
+
+# Local chain data and developer configuration
+data
+**/data
+config.toml
+**/config.toml
+config.local.toml
+**/config.local.toml
+
+# Environment files
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Private keys, signing material, and secret directories
+*.key
+**/*.key
+*.pem
+**/*.pem
+*.p12
+**/*.p12
+*.pfx
+**/*.pfx
+*.keystore
+**/*.keystore
+keystore
+**/keystore
+secrets
+**/secrets
+
+# Other generated output
+dist
+**/dist
+
+# Not needed by the image build (keeps the build context small)
+zips
+kovanica-next-steps
+brand-assets
+docs
+*.JPG
+*.jpeg
+*.png
+README.md
+tasklist.md
+docker-compose.yml
+opencode.json
+config.example.toml

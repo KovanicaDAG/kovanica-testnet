@@ -1,0 +1,11 @@
+[package]
+name = "kovanica-comms-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Canonical comms identity for the Kovanica comms app (control plane)"
+
+[dependencies]
+# Canonical deterministic hash (BLAKE3-256) — same primitive contracts derive IDs with.
+kovanica-common = { path = "../kovanica-common" }
+hex = { workspace = true }

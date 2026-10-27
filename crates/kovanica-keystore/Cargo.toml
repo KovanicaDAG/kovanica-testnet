@@ -1,0 +1,20 @@
+[package]
+name = "kovanica-keystore"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Kovanica keystore v2 (Argon2id + XChaCha20-Poly1305)"
+
+[dependencies]
+kovanica-types = { path = "../kovanica-types" }
+kovanica-crypto = { path = "../kovanica-crypto" }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+hex = { workspace = true }
+argon2 = "0.6"
+bip39 = { version = "3", features = ["zeroize"] }
+chacha20poly1305 = "0.10"
+rand = { workspace = true }
+tempfile = "3"
+zeroize = "1"

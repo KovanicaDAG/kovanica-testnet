@@ -1,0 +1,46 @@
+[package]
+name = "kovanica-comms-relay"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Store-and-forward relay for opaque Kovanica comms envelopes (client-only infra)"
+
+[lib]
+name = "kovanica_comms_relay"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kovanica-comms-relay"
+path = "src/bin/relay.rs"
+required-features = ["server"]
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
+required-features = ["server", "client"]
+
+[features]
+default = ["server", "client"]
+# The axum HTTP relay server (+ its tokio runtime). Needed by the `kovanica-comms-relay`
+# binary and the integration tests.
+server = ["dep:axum", "dep:tokio"]
+# The reqwest HTTP client used by desktop/CLI callers. Pulls native-tls (openssl),
+# so it must stay off the mobile/FFI path.
+client = ["dep:reqwest"]
+
+[dependencies]
+kovanica-comms-crypto = { path = "../kovanica-comms-crypto" }
+kovanica-common = { path = "../kovanica-common" }
+axum = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+base64 = { workspace = true }
+hex = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+ed25519-dalek = { workspace = true }
+reqwest = { workspace = true, optional = true }
+parking_lot = { workspace = true }

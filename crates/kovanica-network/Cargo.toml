@@ -1,0 +1,26 @@
+[package]
+name = "kovanica-network"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+kovanica-types = { path = "../kovanica-types" }
+kovanica-dag = { path = "../kovanica-dag" }
+kovanica-mempool = { path = "../kovanica-mempool" }
+kovanica-crypto = { path = "../kovanica-crypto" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+libp2p = { version = "0.57", features = ["tokio", "tcp", "noise", "yamux", "dns", "gossipsub", "kad", "ping", "identify", "macros", "request-response", "ed25519"] }
+multiaddr = "0.12"
+futures = { workspace = true }
+async-trait = { workspace = true }
+rand = { workspace = true }
+bincode = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+kovanica-storage = { path = "../kovanica-storage" }
+tempfile = "3.8"

@@ -1,0 +1,42 @@
+[package]
+name = "kovanica-rpc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+kovanica-types = { path = "../kovanica-types" }
+kovanica-common = { path = "../kovanica-common" }
+kovanica-storage = { path = "../kovanica-storage" }
+kovanica-consensus = { path = "../kovanica-consensus" }
+kovanica-mempool = { path = "../kovanica-mempool" }
+kovanica-staking = { path = "../kovanica-staking" }
+kovanica-htlc = { path = "../kovanica-htlc" }
+kovanica-vault = { path = "../kovanica-vault" }
+kovanica-multisig = { path = "../kovanica-multisig" }
+kovanica-token = { path = "../kovanica-token" }
+kovanica-execution = { path = "../kovanica-execution" }
+kovanica-dag = { path = "../kovanica-dag" }
+# `ws` is not part of axum's default feature set; it enables the WebSocket
+# upgrade extractor used by the subscription transport.
+axum = { workspace = true, features = ["ws"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+tokio = { workspace = true }
+futures = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+bincode = { workspace = true }
+hex = { workspace = true }
+governor = { version = "0.7", features = ["std"] }
+nonzero_ext = "0.1"
+parking_lot = "0.12"
+
+[dev-dependencies]
+tempfile = "3.8"
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tokio = { workspace = true, features = ["test-util"] }
+tokio-tungstenite = "0.24"
+kovanica-crypto = { path = "../kovanica-crypto" }

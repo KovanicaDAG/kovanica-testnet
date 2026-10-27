@@ -1,0 +1,20 @@
+[package]
+name = "kovanica-dag"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+kovanica-types = { path = "../kovanica-types" }
+kovanica-storage = { path = "../kovanica-storage" }
+kovanica-crypto = { path = "../kovanica-crypto" }
+serde = { workspace = true }
+bincode = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+parking_lot = { workspace = true }
+redb = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.8"

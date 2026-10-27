@@ -1,0 +1,17 @@
+# Testnet genesis validators
+# Generated 2026-10-14
+
+[[validator]]
+address = "aa7ec9c9c72b7f2d60c5d492baf04dbfb1fd269c18c462445411a9f6dc6ca05e"
+stake = 50000000000000
+public_key = "aa7ec9c9c72b7f2d60c5d492baf04dbfb1fd269c18c462445411a9f6dc6ca05e"
+
+[[validator]]
+address = "7173710d0879a79445aab1aed091666302817c512f70f4abb9623cfaef3764f4"
+stake = 50000000000000
+public_key = "7173710d0879a79445aab1aed091666302817c512f70f4abb9623cfaef3764f4"
+
+[[validator]]
+address = "85043fd32c657c41be51315086e9afeee255b29899b1af26481a0ddfc8dd0991"
+stake = 50000000000000
+public_key = "85043fd32c657c41be51315086e9afeee255b29899b1af26481a0ddfc8dd0991"

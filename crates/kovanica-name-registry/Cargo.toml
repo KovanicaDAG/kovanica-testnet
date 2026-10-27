@@ -1,0 +1,28 @@
+[package]
+name = "kovanica-name-registry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "On-chain comms name registry contract (ledger-safe; ABI mirrors kovanica-token)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["std"]
+std = ["kovanica-common/std"]
+
+[dependencies]
+kovanica-common = { path = "../kovanica-common" }
+serde = { workspace = true }
+bincode = { workspace = true }
+
+# Stretch e2e only: drive the compiled wasm artifact through the real wasmi
+# runtime (`tests/wasmi_e2e.rs`). Not needed for the crate's public API, the
+# MemHost unit tests, or a downstream deployment.
+[dev-dependencies]
+kovanica-execution = { path = "../kovanica-execution" }
+kovanica-runtime = { path = "../kovanica-runtime" }
+kovanica-storage = { path = "../kovanica-storage" }
+kovanica-types = { path = "../kovanica-types" }
+tempfile = "3.8"

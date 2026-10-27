@@ -1,0 +1,110 @@
+groups:
+  - name: kovanica.rules
+    interval: 30s
+    rules:
+      # Peer drop alerts
+      - alert: KovanicaPeerCountDrop
+        expr: peer_count < 3
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kovanica peer count dropped below 3 on {{ $labels.instance }}"
+          description: "Peer count is {{ $value }} (expected >= 3 for 4-node quorum). Network partition or node failure likely."
+
+      - alert: KovanicaPeerCountCritical
+        expr: peer_count == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kovanica node {{ $labels.instance }} has zero peers"
+          description: "Node is completely isolated from the network. Immediate attention required."
+
+      # Sync stall alerts
+      - alert: KovanicaBlockHeightStalled
+        expr: increase(block_height[5m]) == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kovanica block height stalled on {{ $labels.instance }}"
+          description: "No new committed leaders in 5 minutes. Consensus may be stalled."
+
+      - alert: KovanicaBlockHeightDrift
+        expr: |
+          max by (instance) (block_height) - min by (instance) (block_height) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kovanica block height drift detected"
+          description: "Block height difference between nodes exceeds 10. Possible sync issue or network partition."
+
+      # Commit lag alerts
+      - alert: KovanicaCommitLatencyHigh
+        expr: commit_latency > 5000
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kovanica commit latency high on {{ $labels.instance }}"
+          description: "Commit latency is {{ $value }}ms (threshold: 5000ms). Consensus may be slow."
+
+      # Memory alerts
+      - alert: KovanicaMemoryHigh
+        expr: rss_proxy > 3000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kovanica memory usage high on {{ $labels.instance }}"
+          description: "RSS proxy is {{ $value }}MB (threshold: 3000MB). Consider memory optimization or restart."
+
+      - alert: KovanicaMemoryCritical
+        expr: rss_proxy > 3500
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kovanica memory usage critical on {{ $labels.instance }}"
+          description: "RSS proxy is {{ $value }}MB (critical threshold: 3500MB). Node may OOM."
+
+      # Mempool alerts
+      - alert: KovanicaMempoolBacklog
+        expr: mempool_size > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kovanica mempool backlog on {{ $labels.instance }}"
+          description: "Mempool has {{ $value }} pending transactions. Block production may be lagging."
+
+      # Node down alerts
+      - alert: KVCNNodeDown
+        expr: up{job="kovanica"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kovanica node {{ $labels.instance }} is down"
+          description: "Prometheus cannot scrape {{ $labels.instance }}. Node may have crashed or network issue."
+
+      # MysticGhost specific alerts
+      - alert: KovanicaMysticGhostMergesetLarge
+        expr: mysticghost_mergeset_size > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kovanica MysticGhost mergeset size large on {{ $labels.instance }}"
+          description: "Mergeset size is {{ $value }} blocks (threshold: 1000). Colouring may be slow."
+
+      - alert: KovanicaMysticGhostColouringFallback
+        expr: increase(mysticghost_colouring_duration_ms{result="fallback"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kovanica MysticGhost colouring fallback rate high on {{ $labels.instance }}"
+          description: "Many colouring operations falling back to linearizer. MysticGhost may be unstable."

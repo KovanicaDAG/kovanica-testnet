@@ -1,0 +1,23 @@
+# KOVANICA_LIGHT_PASSPHRASE belongs in /etc/kovanica-lightnode.env (mode 0600).
+# The process decrypts that passphrase once per run, then syncs and submits
+# one light-node witness per epoch. It is not a validator and it has no tray.
+
+[Unit]
+Description=Kovanica light node
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kovanica
+Group=kovanica
+EnvironmentFile=-/etc/kovanica-lightnode.env
+ExecStart=/usr/local/bin/kovanica-lightnode --data-dir /var/lib/kovanica-lightnode run
+Restart=on-failure
+RestartSec=12
+NoNewPrivileges=true
+PrivateTmp=true
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target

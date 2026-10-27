@@ -1,0 +1,18 @@
+[package]
+name = "kovanica-mempool"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+kovanica-types = { path = "../kovanica-types" }
+kovanica-crypto = { path = "../kovanica-crypto" }
+kovanica-storage = { path = "../kovanica-storage" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+parking_lot = { workspace = true }
+bincode = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.8"

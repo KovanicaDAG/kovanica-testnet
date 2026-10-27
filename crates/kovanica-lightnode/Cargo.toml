@@ -1,0 +1,29 @@
+[package]
+name = "kovanica-lightnode"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Kovanica light node: seal sync and transfers, no consensus loop"
+
+[lib]
+name = "kovanica_lightnode"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kovanica-lightnode"
+path = "src/main.rs"
+
+[dependencies]
+kovanica-types = { path = "../kovanica-types" }
+kovanica-crypto = { path = "../kovanica-crypto" }
+kovanica-light = { path = "../kovanica-light" }
+kovanica-keystore = { path = "../kovanica-keystore" }
+kovanica-staking = { path = "../kovanica-staking" }
+anyhow = { workspace = true }
+clap = { workspace = true, features = ["env"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true, features = ["blocking"] }
+hex = { workspace = true }
+bincode = { workspace = true }
+zeroize = "1"

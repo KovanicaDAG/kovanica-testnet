@@ -1,0 +1,7 @@
+[toolchain]
+channel = "1.91"
+components = ["rust-src", "rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
+
+[profile]
+default = "release"

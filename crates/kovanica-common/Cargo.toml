@@ -1,0 +1,19 @@
+[package]
+name = "kovanica-common"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+# Canonical deterministic hash (BLAKE3-256) for contract ID/escrow derivation.
+# NOTE: built with blake3's default (std) backend — the root workspace
+# dependency does not disable default features, and member-level
+# `default-features = false` is ignored (and warns) in that case. A true
+# no_std build requires flipping the root `[workspace.dependencies]` entry
+# first (out of scope for this lane). The crate structure itself remains
+# no_std + alloc friendly.
+blake3 = { workspace = true }
+
+[features]
+default = ["std"]
+std = []

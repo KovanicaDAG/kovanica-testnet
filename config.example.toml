@@ -1,0 +1,164 @@
+# Kovanica node configuration example.
+#
+# Copy this file to `config.toml` (or pass a path with `--config <file>`) and
+# adjust as needed. Any value can be overridden by an environment variable, which
+# is the recommended approach for containers:
+#
+#   data_dir          -> KOVANICA_DATA_DIR
+#   listen_addr       -> KOVANICA_LISTEN_ADDR
+#   rpc_addr          -> KOVANICA_RPC_ADDR
+#   rpc_port          -> KOVANICA_RPC_PORT
+#   bootnodes         -> KOVANICA_BOOTNODES        (comma-separated list)
+#   validator_key     -> KOVANICA_VALIDATOR_KEY
+#   round_duration_ms -> KOVANICA_ROUND_DURATION_MS
+#   max_peers         -> KOVANICA_MAX_PEERS
+#   treasury_address  -> KOVANICA_TREASURY_ADDRESS
+#   run_validator     -> KOVANICA_RUN_VALIDATOR
+#   rpc_rate_limit_per_min -> KOVANICA_RPC_RATE_LIMIT_PER_MIN
+#   retain_blocks_below_tip         -> KOVANICA_RETENTION_BLOCKS_BELOW_TIP
+#   retain_state_roots_below_height -> KOVANICA_RETENTION_STATE_ROOTS_BELOW_HEIGHT
+#   retain_receipts_below_height    -> KOVANICA_RETENTION_RECEIPTS_BELOW_HEIGHT
+#   retention_interval_secs         -> KOVANICA_RETENTION_INTERVAL_SECS
+#   retention_batch                 -> KOVANICA_RETENTION_BATCH
+
+# Extra env-only overrides without a TOML equivalent:
+#   KOVANICA_CHAIN_ID                   (1 mainnet, 2 legacy testnet, 3 devnet, 4 public testnet, 1337 local)
+#   KOVANICA_RPC_AUTH                   (disable|on, default on)
+#   KOVANICA_RPC_WRITE_TOKENS
+#   KOVANICA_HEALTH_COMMIT_STALL_SECS   (default 120; 0 disables the /health stall check)
+#   KOVANICA_VRF_LEADER                 (true|false; TOML equivalent use_vrf_leader)
+#   KOVANICA_ENFORCE_MIN_ACTIVE_VALIDATORS (true|false, default off; enforces 15 active validators minimum and
+#                                          refuses the single-node genesis fallback)
+#
+# Mempool tuning (env-only, no TOML equivalent; read by
+# `build_mempool_config` in the node):
+#   KOVANICA_MEMPOOL_REBROADCAST_INTERVAL_SECS (default 30)
+#   KOVANICA_MEMPOOL_IN_FLIGHT_TIMEOUT_SECS    (default 15)
+#   KOVANICA_MEMPOOL_MIN_FEE_RATE              (default 0; atoms per byte)
+#   KOVANICA_MEMPOOL_MAX_TXS_PER_SENDER        (default 64)
+#
+# MysticGhost colouring and VRF leader election default on. A live mesh has
+# to take both together. With no validator VRF keys, leader election stays
+# round-robin. KOVANICA_MYSTICGHOST=false or KOVANICA_VRF_LEADER=false turns one off.
+#
+# FROZEN ENV OVERRIDES ON SHARED CHAINS: KOVANICA_ROUND_DURATION_MS,
+# KOVANICA_MYSTICGHOST and KOVANICA_VRF_LEADER may only be set on chain_id 3
+# (devnet) and 1337 (local). On any other chain their presence is a startup
+# error: consensus parameters must match every node or the chain splits.
+# (Values in this file are the operator's declared config and are not frozen.)
+use_mysticghost = true
+use_vrf_leader = true
+
+# Enforce MIN_ACTIVE_VALIDATORS (15) as a hard floor for committee size.
+# When enabled, build_committee will fail if fewer than 15 active validators
+# with sufficient stake exist, including when the active set is empty (it will
+# not fall back to a one-member committee built from the local identity — on a
+# shared chain every node would then believe it is the sole validator).
+# It will NOT automatically fill from offline/spare validators, and NEVER
+# returns offline/slashed validators automatically. Explicit
+# `reactivate_validator` stake tx is the only allowed re-entry path.
+# enforce_min_active_validators = false
+
+# Directory where chain data is stored (consensus.redb + state.redb).
+data_dir = "./data"
+
+# P2P listen address: either `host:port` or a full libp2p multiaddr.
+listen_addr = "0.0.0.0:8000"
+
+# JSON-RPC bind address and port.
+rpc_addr = "127.0.0.1"
+rpc_port = 8545
+
+# Bootstrap peers. DNS seed name(s) for the kovanica network; never point these at
+# a Cloudflare-proxied (orange-cloud) hostname for TCP. No hosts are hard-coded
+# in the node — supply kovanica-native seeds here or via KOVANICA_BOOTNODES.
+#
+# Testnet:
+# bootnodes = ["testnet.kovanica.online:8000"]
+#
+# Mainnet:
+# bootnodes = ["mainnet.kovanica.online:8000"]
+bootnodes = []
+
+# Run as an active consensus validator (participate in block proposal and voting).
+# Defaults to true in code. When run_validator is true, validator_key is REQUIRED
+# (pointing to a 0600 seed file).
+#
+# To run as a non-validating read-only / RPC node without generating keys:
+# set `run_validator = false` (or export KOVANICA_RUN_VALIDATOR=false).
+# run_validator = false
+
+# Path to a validator signing key file containing a 32-byte hex seed.
+# Required while run_validator is true (the default): the node refuses to
+# start without it. A read-only node (run_validator = false) may omit it.
+# validator_key = "/etc/kovanica/validator.key"
+
+# Target consensus round duration in milliseconds.
+# 4 s round → 12 s per committed leader (wave length 3).
+round_duration_ms = 4000
+
+# Maximum number of connected peers.
+max_peers = 50
+
+# JSON-RPC rate limit per client IP, in requests per minute. Burst capacity is
+# derived as max(1, rpc_rate_limit_per_min / 6). Set to 0 to disable rate
+# limiting (e.g. for local tests or trusted tooling).
+rpc_rate_limit_per_min = 60
+
+# Genesis treasury address as 32 bytes of hex. When omitted, the zero address is
+# used. Only read the first time the database is created (fresh genesis).
+# treasury_address = "<64 hex characters>"
+
+# ---------------------------------------------------------------------------
+# Retention / pruning — OPT-IN, DEFAULT OFF.
+#
+# All three windows are commented out below: an unconfigured node keeps every
+# block, state root and transaction receipt it has ever seen. Setting a window
+# to `0` is equivalent to leaving it out ("keep everything"). The node reads
+# these keys and, while at least one is enabled, runs a retention pass on an
+# interval. Each pass deletes at most `retention_batch` rows per store so the
+# event loop is never blocked.
+#
+# Every window is additionally clamped to a built-in safety floor: nothing at or
+# above `committed_height - 1000` is ever deleted, no matter what is configured
+# here. A window larger than the available history deletes nothing.
+#
+#   retain_blocks_below_tip          -> KOVANICA_RETENTION_BLOCKS_BELOW_TIP
+#   retain_state_roots_below_height  -> KOVANICA_RETENTION_STATE_ROOTS_BELOW_HEIGHT
+#   retain_receipts_below_height     -> KOVANICA_RETENTION_RECEIPTS_BELOW_HEIGHT
+#   retention_interval_secs          -> KOVANICA_RETENTION_INTERVAL_SECS
+#   retention_batch                  -> KOVANICA_RETENTION_BATCH
+#
+# retain_* windows are measured in blocks below the current tip:
+#   retain_blocks_below_tip keeps that many rounds of block history,
+#   the two *_below_height windows keep that many committed heights of state
+#   roots / transaction receipts.
+#
+# retain_blocks_below_tip = 1000000
+# retain_state_roots_below_height = 1000000
+# retain_receipts_below_height = 1000000
+retention_interval_secs = 300
+retention_batch = 10000
+
+# Gossipsub peer scoring. Thresholds must be <= 0 and ordered
+# ban <= graylist <= publish <= gossip <= 0; the node refuses to start
+# otherwise. Defaults shown are safe for a small validator network.
+[peer_scoring]
+enabled = true
+gossip_threshold = -10.0
+publish_threshold = -50.0
+graylist_threshold = -80.0
+ban_threshold = -100.0
+invalid_message_weight = -10.0
+
+# Contract execution limits.
+#
+# NOTE: the node does not parse an `[execution]` table yet — it uses the
+# built-in constants below (kovanica-runtime `ExecutionConfig`,
+# kovanica-mempool `MempoolConfig`). The block is therefore documentation of
+# the current defaults; see docs/GAS_SCHEDULE.md.
+#
+# [execution]
+# default_gas_limit = 10000000          # per-call fuel cap (kovanica_types::MAX_TX_GAS_LIMIT)
+# default_memory_limit_pages = 16       # 1 MiB linear-memory cap (ExecutionConfig::default)
+# max_gas_limit = 10000000              # mempool admission cap (MempoolConfig::max_gas_limit)

@@ -1,0 +1,18 @@
+[package]
+name = "kovanica-light"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Kovanica light-client verification (headers, seals, inclusion proofs)"
+
+[dependencies]
+kovanica-types = { path = "../kovanica-types" }
+kovanica-crypto = { path = "../kovanica-crypto" }
+kovanica-keystore = { path = "../kovanica-keystore" }
+# BLAKE3 is the canonical contract-address derivation hash (mirrors
+# `kovanica-common::hash`, which the node's deploy path calls).
+blake3 = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+hex = { workspace = true }

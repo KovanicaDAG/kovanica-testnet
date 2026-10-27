@@ -1,0 +1,3 @@
+#!/bin/sh
+# Real Gradle wrapper — using jar at gradle/wrapper/gradle-wrapper.jar
+exec java -cp "gradle/wrapper/gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain "$@"

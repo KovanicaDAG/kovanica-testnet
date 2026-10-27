@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d16f054a805f95147edfb81efa9d74109a417c283fce73892ae22fd55c3aade6 # shrinks to (stakes, split) = ([1], [false])
+cc e74d527585b6e117bf40fb7924d785842a61317fe881481c9699ab7e393e1a42 # shrinks to (stakes, split) = ([1], [false])
+cc e9a18e9e88282381e6390802e3117188364077b324e372e2f0b35621cf0d9ef7 # shrinks to s = Scenario { stakes: [2, 1], rows: [Row { register: true, votes: [true, false], has_block: true, block_hash_missing: false }] }
+cc dcdab6b33c13ce919634537e13906f465647bf16de2d429a8bde32f6d31d4adf # shrinks to s = Scenario { stakes: [1, 1, 1, 1], rows: [Row { register: true, votes: [true, false, true, false], has_block: true, block_hash_missing: false }] }

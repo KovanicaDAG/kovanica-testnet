@@ -1,0 +1,101 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/kovanica-types",
+    "crates/kovanica-crypto",
+    "crates/kovanica-storage",
+    "crates/kovanica-dag",
+    "crates/kovanica-consensus",
+    "crates/kovanica-mempool",
+    "crates/kovanica-network",
+    "crates/kovanica-runtime",
+    "crates/kovanica-execution",
+    "crates/kovanica-staking",
+    "crates/kovanica-node",
+    "crates/kovanica-cli",
+    "crates/kovanica-keystore",
+    "crates/kovanica-light",
+    "crates/kovanica-light-ffi",
+    "crates/kovanica-lightnode",
+    "crates/kovanica-rpc",
+    "crates/kovanica-common",
+    "crates/kovanica-htlc",
+    "crates/kovanica-vault",
+    "crates/kovanica-multisig",
+    "crates/kovanica-token",
+    "crates/kovanica-comms-core",
+    "crates/kovanica-comms-crypto",
+    "crates/kovanica-comms-relay",
+    "crates/kovanica-name-registry",
+    "crates/kovanica-faucet",
+]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+authors = ["Kovanica Team"]
+license = "Apache-2.0"
+repository = "https://github.com/your-org/kovanica"
+
+[workspace.dependencies]
+# Async
+tokio = { version = "1.40", features = ["full"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3"
+postcard = { version = "1.0", features = ["alloc"] }
+base64 = "0.22"
+
+# Crypto
+blake3 = "=1.5.1"
+ed25519-dalek = { version = "2.1", features = ["serde", "rand_core", "batch"] }
+rand = "0.8"
+hex = "0.4"
+# Comms E2E (client-only): raw-key X25519 + XChaCha20-Poly1305 sealed envelopes.
+x25519-dalek = "2"
+chacha20poly1305 = "0.10"
+zeroize = "1"
+
+# Storage
+redb = "2.1"
+sled = "0.34"  # fallback option
+
+# Error & logging
+thiserror = "1.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Networking (choose one later)
+libp2p = { version = "0.54", features = ["tcp", "noise", "yamux", "gossipsub", "kad", "identify"] }
+# iroh = "0.28"  # alternative
+
+# WASM
+wasmi = "0.40"  # deterministic interpreter – chosen for v1
+# wasmtime = "25"  # alternative if needed later
+
+# Utils
+bytes = "1.7"
+parking_lot = "0.12"
+dashmap = "6.0"
+clap = { version = "4.5", features = ["derive"] }
+axum = "0.7"
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+reqwest = { version = "0.12", features = ["json"] }
+once_cell = "1.19"
+
+# Metrics
+prometheus-client = "0.25"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+opt-level = 3
+
+[profile.dev]
+opt-level = 1

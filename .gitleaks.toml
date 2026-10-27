@@ -1,0 +1,15 @@
+[extend]
+useDefault = true
+[[rules]]
+id = "kovanica-raw-ed25519-secret"
+description = "64-hex secret key file"
+regex = '''(?m)^[0-9a-fA-F]{64}\s*$'''
+path = '''(\.dat|\.key)$'''
+
+# Test fixture, not a secret: the encrypted console wallet cross-check vector
+# (seed 0x5A repeated, fixed test password). generic-api-key matches its
+# ciphertext. A path-scoped allowlist works for any scan root; the
+# .gitleaksignore path fingerprint only matches a scan run from the repo root.
+[allowlist]
+description = "console-desktop encrypted keystore test fixture"
+paths = ['''(^|/)apps/console-desktop/src-tauri/tests/fixtures/cross-keystore\.json$''']

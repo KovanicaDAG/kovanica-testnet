@@ -1,0 +1,46 @@
+[package]
+name = "kovanica-cli"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+autoexamples = false
+
+[lib]
+name = "kovanica_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kovanica"
+path = "src/main.rs"
+
+[[bin]]
+name = "generate-validators"
+path = "examples/generate_validators.rs"
+
+[[bin]]
+name = "kovanica-bench"
+path = "src/bin/bench.rs"
+
+[dependencies]
+kovanica-types = { path = "../kovanica-types" }
+kovanica-keystore = { path = "../kovanica-keystore" }
+kovanica-crypto = { path = "../kovanica-crypto" }
+kovanica-common = { path = "../kovanica-common" }
+kovanica-htlc = { path = "../kovanica-htlc" }
+kovanica-vault = { path = "../kovanica-vault" }
+kovanica-multisig = { path = "../kovanica-multisig" }
+kovanica-token = { path = "../kovanica-token" }
+kovanica-comms-core = { path = "../kovanica-comms-core" }
+clap = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+tokio = { workspace = true }
+hex = { workspace = true }
+rpassword = "7.5"
+tempfile = "3"
+zeroize = "1"
+ratatui = "0.29"

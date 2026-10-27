@@ -1,0 +1,32 @@
+# Chain 4 — 5-node validator set for genesis (EXAMPLE).
+# The real file is generated locally and gitignored:
+#   ops/docker/validators/generate.sh
+# Canonical address format (PRO-21): kvnc + 57 base32 chars + dag = 64 chars.
+# Stakes = MIN_VALIDATOR_STAKE = 50_000 KUNA (50_000_000_000_000 atoms).
+chain_id = 4
+
+[[validator]]
+address = "kvncqlrcda8k6e2077n7zqyk6y4clun3qadl9hkkrprdk068fur0y5l2hkgg7dag"
+stake = 50000000000000
+public_key = "07c786f4f6d654ff7a7e10096d12b8ff271075bf2ded61846db3f474f06f253e"
+
+[[validator]]
+address = "kvncfam8nskqstnzhs5wjez5760zjt7qsy6cunmq8khy9wfjpmuqfh5tk7dafdag"
+stake = 50000000000000
+public_key = "4f7679c2c082e62bc28e96454f69e292fc081358e4f603dae42b9320ef804de8"
+
+[[validator]]
+address = "kvncuvvvjdn226s4zql566ule6qpq70u6shsh0du832te6nglae2fc4tgtqaqdag"
+stake = 50000000000000
+public_key = "e318c9366a56a15103f4d6b9fce801079fcd42f0bbdbc3c54bcea68ff72a4e2a"
+
+[[validator]]
+address = "kvncx8dp5yrde5et4nwsrel2rvhe8kx423nq2jskpqepuldcs0458paqq84c7dag"
+stake = 50000000000000
+public_key = "31da1a106dcd32bacdd01e7ea1b2f93d8d55466054a1608321e7db883eb4387a"
+
+[[validator]]
+address = "kvncnxlkyz96f2ps6esdgmgzql2q93s95yykqd20a66rxfd82pjtnzah6fufqdag"
+stake = 50000000000000
+public_key = "99bf6208ba4a830d660d46d0207d402c605a10960354feeb43325a75064b98bb"
+

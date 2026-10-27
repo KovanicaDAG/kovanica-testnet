@@ -1,0 +1,19 @@
+[package]
+name = "kovanica-htlc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# cdylib: the fixed wasm32 entry-point ABI is compiled to a standalone .wasm;
+# rlib: native dispatch (kovanica-execution) links the typed API directly.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+kovanica-common = { path = "../kovanica-common" }
+serde = { workspace = true }
+bincode = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["kovanica-common/std"]

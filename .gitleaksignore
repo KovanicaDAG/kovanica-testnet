@@ -1,0 +1,14 @@
+# Encrypted console wallet test vector (seed 0x5A repeated, password cross-check).
+# generic-api-key matches the ciphertext, not a live key. Fingerprint from gitleaks 8.24.3.
+# The commit form is for a git scan. The path form is for a directory scan.
+62f487532da42ada4cd656ea3de1d89db0bb8ea0:apps/console-desktop/src-tauri/src/wallet.rs:generic-api-key:735
+apps/console-desktop/src-tauri/tests/fixtures/cross-keystore.json:generic-api-key:1
+
+# PRO-28: Linear/Notion tokens committed in opencode.json at e48b7530 and since
+# removed (the file now uses ${env:...} placeholders). They are revoked; the
+# history rewrite that would remove them from the objects is tracked in PRO-28
+# and needs an explicit force-push decision. Without these two fingerprints the
+# full-history scan (CI nightly) can never pass, which would make the check
+# meaningless — every new leak would sit behind a permanently red job.
+e48b7530f3a6f58dddffce5eea26d62690edef42:opencode.json:linear-api-key:8
+e48b7530f3a6f58dddffce5eea26d62690edef42:opencode.json:generic-api-key:15

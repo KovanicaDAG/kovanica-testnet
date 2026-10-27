@@ -1,0 +1,26 @@
+[package]
+name = "kovanica-execution"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+kovanica-types = { path = "../kovanica-types" }
+kovanica-runtime = { path = "../kovanica-runtime" }
+kovanica-staking = { path = "../kovanica-staking" }
+kovanica-consensus = { path = "../kovanica-consensus" }
+kovanica-storage = { path = "../kovanica-storage" }
+kovanica-common = { path = "../kovanica-common" }
+kovanica-crypto = { path = "../kovanica-crypto" }
+kovanica-htlc = { path = "../kovanica-htlc" }
+kovanica-vault = { path = "../kovanica-vault" }
+kovanica-multisig = { path = "../kovanica-multisig" }
+kovanica-token = { path = "../kovanica-token" }
+bincode = { workspace = true }
+redb = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.8"
